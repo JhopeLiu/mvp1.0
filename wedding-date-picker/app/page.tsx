@@ -396,6 +396,7 @@ export default function Home() {
                       #{index + 1} {item.dateISO}（{item.lunarText}） · {item.score}分
                     </p>
                     <p className="mt-1 text-slate-600">{item.reason}</p>
+                    <p className="mt-1 text-slate-500">{dateScoreDetailByISO[item.dateISO]}</p>
                   </li>
                 ))}
                 {rankedAuspiciousDates.length === 0 && (
@@ -407,7 +408,7 @@ export default function Home() {
             </div>
 
             <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
-              <h3 className="text-sm font-semibold text-slate-800">9 月吉日核验</h3>
+              <h3 className="text-sm font-semibold text-slate-800">9 月吉日核验（含可化解项）</h3>
               <ul className="mt-2 max-h-40 space-y-2 overflow-y-auto pr-1 text-xs text-slate-700">
                 {septemberQualifiedDates.map((item) => (
                   <li key={`sep-${item.dateISO}`} className="rounded-lg bg-slate-50 p-2">
@@ -415,11 +416,12 @@ export default function Home() {
                       {item.dateISO}（{item.lunarText}）· {item.score}分
                     </p>
                     <p className="mt-1 text-slate-600">{item.reason}</p>
+                    <p className="mt-1 text-slate-500">{dateScoreDetailByISO[item.dateISO]}</p>
                   </li>
                 ))}
                 {septemberQualifiedDates.length === 0 && (
                   <li className="rounded-lg bg-slate-50 p-2 text-slate-500">
-                    当前筛选条件下，9 月暂无满足“宜嫁娶 + 黄历规则”的日期。
+                    当前筛选条件下，9 月暂无达到推荐阈值的日期。
                   </li>
                 )}
               </ul>

@@ -113,10 +113,29 @@ const ELEMENT_RESTRAIN_MAP: Record<"金" | "木" | "水" | "火" | "土", "金" 
   金: "木",
 };
 
+const ZODIAC_CONFLICT_HOUR_HINT: Record<ZodiacAnimal, string> = {
+  鼠: "子时（23:00-01:00）",
+  牛: "丑时（01:00-03:00）",
+  虎: "寅时（03:00-05:00）",
+  兔: "卯时（05:00-07:00）",
+  龙: "辰时（07:00-09:00）",
+  蛇: "巳时（09:00-11:00）",
+  马: "午时（11:00-13:00）",
+  羊: "未时（13:00-15:00）",
+  猴: "申时（15:00-17:00）",
+  鸡: "酉时（17:00-19:00）",
+  狗: "戌时（19:00-21:00）",
+  猪: "亥时（21:00-23:00）",
+};
+
 export type ZodiacPreference = ZodiacAnimal | "ANY";
 
 function isSpecificZodiac(zodiac: ZodiacPreference): zodiac is ZodiacAnimal {
   return zodiac !== "ANY";
+}
+
+function isZodiacAnimal(value: string): value is ZodiacAnimal {
+  return value in ZODIAC_ELEMENT_MAP;
 }
 
 function addDays(date: Date, days: number): Date {
@@ -334,6 +353,8 @@ export function getAlmanacAuspiciousAnalysis({
     const naYinCheck = evaluateNaYinCompatibility(dayElement, groomZodiac, brideZodiac);
     const hasZodiacConflict = hasDirectChong || !naYinCheck.compatible;
     const scoreNotes: string[] = [];
+    const impactNotes: string[] = [];
+    const remedyNotes: string[] = [];
     let score = 60;
 
     if (hasZodiacConflict) {
@@ -348,6 +369,8 @@ export function getAlmanacAuspiciousAnalysis({
     } else {
       score -= 18;
       scoreNotes.push("黑道日 -18");
+      impactNotes.push(`值神${lunar.getDayTianShen()}，婚礼稳定性略受影响`);
+      remedyNotes.push("建议优先选择当天吉时（如巳时/午时）举行核心仪式");
     }
 
     if (AUSPICIOUS_ZHI_XING.has(zhiXing)) {
@@ -420,6 +443,11 @@ export function getAlmanacAuspiciousAnalysis({
     if (hasDirectChong) {
       score -= 24;
       scoreNotes.push(`日冲${dayChongShengXiao}（与新人冲）-24`);
+      impactNotes.push(`日冲${dayChongShengXiao}，与新人生肖存在冲克`);
+      const conflictHourHint = isZodiacAnimal(dayChongShengXiao)
+        ? ZODIAC_CONFLICT_HOUR_HINT[dayChongShengXiao]
+        : "冲生肖对应时辰";
+      remedyNotes.push(`尽量避开${conflictHourHint}，并可采用迎亲改时方案`);
     }
 
     if (naYinCheck.compatible) {
@@ -428,6 +456,8 @@ export function getAlmanacAuspiciousAnalysis({
     } else {
       score -= 18;
       scoreNotes.push(`${naYinCheck.reason} -18`);
+      impactNotes.push("纳音五行存在不协同");
+      remedyNotes.push("可通过择吉时与婚礼用色（按喜用五行）做平衡");
     }
 
     if (lunar.getDayTianShenLuck() === "吉") {
@@ -445,32 +475,46 @@ export function getAlmanacAuspiciousAnalysis({
 
     score = Math.max(0, Math.min(100, score));
     dateScoreByISO[dateISO] = score;
-    dateScoreDetailByISO[dateISO] = scoreNotes.join("；");
+    dateScoreDetailByISO[dateISO] = [
+      scoreNotes.join("；"),
+      impactNotes.length > 0 ? `影响：${impactNotes.join("；")}` : "",
+      remedyNotes.length > 0 ? `化解建议：${remedyNotes.join("；")}` : "",
+    ]
+      .filter(Boolean)
+      .join(" | ");
 
     const isAuspiciousByRules =
-      isHuangDao &&
       !isYangGongJi &&
       !isSanSang &&
       !isSiLi &&
       !isSiJue &&
-      naYinCheck.compatible &&
       includesMarryInYi &&
       excludesMarryInJi &&
       isBingWuYearFor2026 &&
       (ignoreTemperature || isPreferredTemp) &&
       !isHolidayOrFestival &&
-      !hasDirectChong;
+      score >= 58;
 
     if (!isAuspiciousByRules) {
       return;
     }
 
-    const reasons = [`黄道吉日（${zhiXing}日）`, "宜嫁娶", naYinCheck.reason];
+    const reasons = [isHuangDao ? `黄道吉日（${zhiXing}日）` : `黑道日（${lunar.getDayTianShen()}）`, "宜嫁娶"];
+
+    if (naYinCheck.compatible) {
+      reasons.push(naYinCheck.reason);
+    } else {
+      reasons.push(`${naYinCheck.reason}（需化解）`);
+    }
 
     if (isWeekend && !isAdjustedWorkday) {
       reasons.push("周末档期");
     } else if (isAdjustedWorkday) {
       reasons.push("调休工作日，周末便利性较低");
+    }
+
+    if (hasDirectChong) {
+      reasons.push(`与属${dayChongShengXiao}有冲，建议避冲时并择吉时化解`);
     }
 
     if (year === 2026) {
