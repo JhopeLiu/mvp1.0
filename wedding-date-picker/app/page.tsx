@@ -101,7 +101,15 @@ export default function Home() {
       }),
     [normalizedMaxTemp, normalizedMinTemp, selectedYear],
   );
-  const { zodiacConflictDateSet, zodiacCompatibleDateSet, recommendedDateSet, rankedAuspiciousDates, leapMonth } = useMemo(
+  const {
+    zodiacConflictDateSet,
+    zodiacCompatibleDateSet,
+    recommendedDateSet,
+    rankedAuspiciousDates,
+    dateScoreByISO,
+    dateScoreDetailByISO,
+    leapMonth,
+  } = useMemo(
     () =>
       getAlmanacAuspiciousAnalysis({
         year: selectedYear,
@@ -123,8 +131,12 @@ export default function Home() {
         zodiacCompatibleDateSet,
         outOfPreferredTemperatureDateSet,
         recommendedDateSet,
+        dateScoreByISO,
+        dateScoreDetailByISO,
       }),
     [
+      dateScoreByISO,
+      dateScoreDetailByISO,
       holidayMap,
       outOfPreferredTemperatureDateSet,
       recommendedDateSet,
@@ -135,6 +147,10 @@ export default function Home() {
     ],
   );
   const totalDates = useMemo(() => getDatesForYear(selectedYear).length, [selectedYear]);
+  const septemberQualifiedDates = useMemo(
+    () => rankedAuspiciousDates.filter((item) => item.dateISO.startsWith(`${selectedYear}-09-`)),
+    [rankedAuspiciousDates, selectedYear],
+  );
 
   const handleDownloadCalendar = async () => {
     if (!calendarExportRef.current || isDownloadingCalendar) {
@@ -332,7 +348,7 @@ export default function Home() {
             <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
               <h3 className="text-sm font-semibold text-slate-800">黄历优选日期（按吉利度排序）</h3>
               <ul className="mt-2 max-h-72 space-y-2 overflow-y-auto pr-1 text-xs text-slate-700">
-                {rankedAuspiciousDates.slice(0, 12).map((item, index) => (
+                {rankedAuspiciousDates.slice(0, 10).map((item, index) => (
                   <li key={item.dateISO} className="rounded-lg bg-slate-50 p-2">
                     <p className="font-semibold text-slate-900">
                       #{index + 1} {item.dateISO}（{item.lunarText}） · {item.score}分
@@ -343,6 +359,25 @@ export default function Home() {
                 {rankedAuspiciousDates.length === 0 && (
                   <li className="rounded-lg bg-slate-50 p-2 text-slate-500">
                     当前条件下暂无满足黄历规则的吉日，请调整年份或温度范围后重试。
+                  </li>
+                )}
+              </ul>
+            </div>
+
+            <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
+              <h3 className="text-sm font-semibold text-slate-800">9 月吉日核验</h3>
+              <ul className="mt-2 max-h-40 space-y-2 overflow-y-auto pr-1 text-xs text-slate-700">
+                {septemberQualifiedDates.map((item) => (
+                  <li key={`sep-${item.dateISO}`} className="rounded-lg bg-slate-50 p-2">
+                    <p className="font-semibold text-slate-900">
+                      {item.dateISO}（{item.lunarText}）· {item.score}分
+                    </p>
+                    <p className="mt-1 text-slate-600">{item.reason}</p>
+                  </li>
+                ))}
+                {septemberQualifiedDates.length === 0 && (
+                  <li className="rounded-lg bg-slate-50 p-2 text-slate-500">
+                    当前筛选条件下，9 月暂无满足“宜嫁娶 + 黄历规则”的日期。
                   </li>
                 )}
               </ul>

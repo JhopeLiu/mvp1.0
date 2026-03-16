@@ -83,16 +83,16 @@ export function YearCalendar({ year, months }: YearCalendarProps) {
                   }`}
                   title={
                     day.hasZodiacConflict
-                      ? `${day.dateISO} • 生肖冲突`
+                      ? `${day.dateISO} • 得分${day.score}分 • 生肖冲突；${day.scoreDetail}`
                       : day.isHoliday
-                        ? `${day.dateISO} • ${day.holidayName}`
+                        ? `${day.dateISO} • 得分${day.score}分 • ${day.holidayName}；${day.scoreDetail}`
                       : day.isAdjustedWorkday
-                        ? `${day.dateISO} • 调休工作日`
+                        ? `${day.dateISO} • 得分${day.score}分 • 调休工作日；${day.scoreDetail}`
                       : day.isOutsidePreferredTempRange
-                        ? `${day.dateISO} • 超出偏好温度范围`
+                        ? `${day.dateISO} • 得分${day.score}分 • 超出偏好温度范围；${day.scoreDetail}`
                       : day.isRecommendedDate
-                        ? `${day.dateISO} • 推荐日期`
-                        : `${day.dateISO} • 生肖匹配`
+                        ? `${day.dateISO} • 得分${day.score}分 • 推荐日期；${day.scoreDetail}`
+                        : `${day.dateISO} • 得分${day.score}分 • 生肖匹配；${day.scoreDetail}`
                   }
                 >
                   {day.dayNumber}

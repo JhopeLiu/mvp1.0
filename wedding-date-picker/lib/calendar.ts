@@ -9,6 +9,8 @@ export type CalendarDay = {
   isZodiacCompatible: boolean;
   isOutsidePreferredTempRange: boolean;
   isRecommendedDate: boolean;
+  score: number;
+  scoreDetail: string;
 };
 
 export type MonthGrid = {
@@ -24,6 +26,8 @@ type BuildMonthGridsOptions = {
   zodiacCompatibleDateSet?: Set<string>;
   outOfPreferredTemperatureDateSet?: Set<string>;
   recommendedDateSet?: Set<string>;
+  dateScoreByISO?: Record<string, number>;
+  dateScoreDetailByISO?: Record<string, string>;
 };
 
 export function toISODateString(year: number, month: number, day: number): string {
@@ -50,6 +54,8 @@ export function buildMonthGrids(year: number, options: BuildMonthGridsOptions = 
   const zodiacCompatibleDateSet = options.zodiacCompatibleDateSet ?? new Set<string>();
   const outOfPreferredTemperatureDateSet = options.outOfPreferredTemperatureDateSet ?? new Set<string>();
   const recommendedDateSet = options.recommendedDateSet ?? new Set<string>();
+  const dateScoreByISO = options.dateScoreByISO ?? {};
+  const dateScoreDetailByISO = options.dateScoreDetailByISO ?? {};
 
   return Array.from({ length: 12 }, (_, monthIndex) => {
     const monthDates = allDates.filter((date) => date.getMonth() === monthIndex);
@@ -74,6 +80,8 @@ export function buildMonthGrids(year: number, options: BuildMonthGridsOptions = 
           isZodiacCompatible: zodiacCompatibleDateSet.has(dateISO),
           isOutsidePreferredTempRange: outOfPreferredTemperatureDateSet.has(dateISO),
           isRecommendedDate: recommendedDateSet.has(dateISO),
+          score: dateScoreByISO[dateISO] ?? 0,
+          scoreDetail: dateScoreDetailByISO[dateISO] ?? "暂无评分说明",
         };
       }),
     };

@@ -55,6 +55,8 @@ type AlmanacAuspiciousOutput = {
   zodiacCompatibleDateSet: Set<string>;
   recommendedDateSet: Set<string>;
   rankedAuspiciousDates: RankedAuspiciousDate[];
+  dateScoreByISO: Record<string, number>;
+  dateScoreDetailByISO: Record<string, string>;
   leapMonth: number;
 };
 
@@ -267,6 +269,8 @@ export function getAlmanacAuspiciousAnalysis({
   const zodiacConflictDateSet = new Set<string>();
   const zodiacCompatibleDateSet = new Set<string>();
   const rankedAuspiciousDates: RankedAuspiciousDate[] = [];
+  const dateScoreByISO: Record<string, number> = {};
+  const dateScoreDetailByISO: Record<string, string> = {};
   const siLiDateSet = getSiLiDateSet(year);
   const siJueDateSet = getSiJueDateSet(year);
   const leapMonth = LunarYear.fromYear(year).getLeapMonth();
@@ -299,6 +303,8 @@ export function getAlmanacAuspiciousAnalysis({
     const hasDirectChong = dayChongShengXiao === groomZodiac || dayChongShengXiao === brideZodiac;
     const naYinCheck = evaluateNaYinCompatibility(dayElement, groomZodiac, brideZodiac);
     const hasZodiacConflict = hasDirectChong || !naYinCheck.compatible;
+    const scoreNotes: string[] = [];
+    let score = 60;
 
     if (hasZodiacConflict) {
       zodiacConflictDateSet.add(dateISO);
@@ -306,9 +312,111 @@ export function getAlmanacAuspiciousAnalysis({
       zodiacCompatibleDateSet.add(dateISO);
     }
 
+    if (isHuangDao) {
+      score += 12;
+      scoreNotes.push("黄道日 +12");
+    } else {
+      score -= 18;
+      scoreNotes.push("黑道日 -18");
+    }
+
+    if (AUSPICIOUS_ZHI_XING.has(zhiXing)) {
+      score += 6;
+      scoreNotes.push(`${zhiXing}值偏吉 +6`);
+    } else {
+      score -= 4;
+      scoreNotes.push(`${zhiXing}值一般 -4`);
+    }
+
+    if (includesMarryInYi) {
+      score += 14;
+      scoreNotes.push("宜含嫁娶 +14");
+    } else {
+      score -= 30;
+      scoreNotes.push("宜不含嫁娶 -30");
+    }
+
+    if (excludesMarryInJi) {
+      score += 6;
+      scoreNotes.push("忌不含嫁娶 +6");
+    } else {
+      score -= 35;
+      scoreNotes.push("忌含嫁娶 -35");
+    }
+
+    if (isHolidayOrFestival) {
+      score -= 45;
+      scoreNotes.push("法定/传统节日禁选 -45");
+    }
+
+    if (isAdjustedWorkday) {
+      score -= 8;
+      scoreNotes.push("调休工作日 -8");
+    } else if (isWeekend) {
+      score += 5;
+      scoreNotes.push("周末档期 +5");
+    }
+
+    if (isYangGongJi) {
+      score -= 40;
+      scoreNotes.push("杨公忌 -40");
+    }
+
+    if (isSanSang) {
+      score -= 35;
+      scoreNotes.push("三丧日 -35");
+    }
+
+    if (isSiLi) {
+      score -= 28;
+      scoreNotes.push("四离日 -28");
+    }
+
+    if (isSiJue) {
+      score -= 28;
+      scoreNotes.push("四绝日 -28");
+    }
+
+    if (isPreferredTemp) {
+      score += 4;
+      scoreNotes.push("温度匹配 +4");
+    } else {
+      score -= 10;
+      scoreNotes.push("温度不匹配 -10");
+    }
+
+    if (hasDirectChong) {
+      score -= 24;
+      scoreNotes.push(`日冲${dayChongShengXiao}（与新人冲）-24`);
+    }
+
+    if (naYinCheck.compatible) {
+      score += naYinCheck.score;
+      scoreNotes.push(`${naYinCheck.reason} +${naYinCheck.score}`);
+    } else {
+      score -= 18;
+      scoreNotes.push(`${naYinCheck.reason} -18`);
+    }
+
+    if (lunar.getDayTianShenLuck() === "吉") {
+      score += 3;
+      scoreNotes.push("天神吉 +3");
+    }
+
+    if (isBingWuYearFor2026) {
+      score += 2;
+      scoreNotes.push("丙午年校验通过 +2");
+    } else {
+      score -= 50;
+      scoreNotes.push("丙午年校验失败 -50");
+    }
+
+    score = Math.max(0, Math.min(100, score));
+    dateScoreByISO[dateISO] = score;
+    dateScoreDetailByISO[dateISO] = scoreNotes.join("；");
+
     const isAuspiciousByRules =
       isHuangDao &&
-      AUSPICIOUS_ZHI_XING.has(zhiXing) &&
       !isYangGongJi &&
       !isSanSang &&
       !isSiLi &&
@@ -325,13 +433,9 @@ export function getAlmanacAuspiciousAnalysis({
       return;
     }
 
-    let score = 60;
     const reasons = [`黄道吉日（${zhiXing}日）`, "宜嫁娶", naYinCheck.reason];
 
-    score += naYinCheck.score;
-
     if (isWeekend && !isAdjustedWorkday) {
-      score += 6;
       reasons.push("周末档期");
     } else if (isAdjustedWorkday) {
       reasons.push("调休工作日，周末便利性较低");
@@ -370,6 +474,8 @@ export function getAlmanacAuspiciousAnalysis({
     zodiacCompatibleDateSet,
     recommendedDateSet: new Set(rankedAuspiciousDates.slice(0, TOP_AUSPICIOUS_COUNT).map((item) => item.dateISO)),
     rankedAuspiciousDates,
+    dateScoreByISO,
+    dateScoreDetailByISO,
     leapMonth,
   };
 }
