@@ -5,7 +5,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { YearCalendar } from "@/components/year-calendar";
 import { buildMonthGrids, getDatesForYear } from "@/lib/calendar";
 import { getHolidayContext } from "@/lib/holidays";
-import { getAlmanacAuspiciousAnalysis, getTemperaturePreferenceSets, type ZodiacPreference } from "@/lib/wedding-score";
+import {
+  getAlmanacAuspiciousAnalysis,
+  getTemperaturePreferenceSets,
+  type RecommendationMode,
+  type ZodiacPreference,
+} from "@/lib/wedding-score";
 import { fromZodiacShareKey, toZodiacShareKey, ZODIAC_OPTIONS } from "@/lib/zodiac";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -21,6 +26,7 @@ export default function Home() {
   const [minTemp, setMinTemp] = useState("16");
   const [maxTemp, setMaxTemp] = useState("24");
   const [temperatureMode, setTemperatureMode] = useState<TemperatureMode>("range");
+  const [recommendationMode, setRecommendationMode] = useState<RecommendationMode>("lenient");
   const [yearInput, setYearInput] = useState<string>(String(CURRENT_YEAR));
   const [isDownloadingCalendar, setIsDownloadingCalendar] = useState(false);
   const [shareCopyStatus, setShareCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
@@ -34,6 +40,7 @@ export default function Home() {
     const minTempFromQuery = queryParams.get("tempMin");
     const maxTempFromQuery = queryParams.get("tempMax");
     const tempModeFromQuery = queryParams.get("tempMode");
+    const recommendationModeFromQuery = queryParams.get("mode");
 
     if (cityFromQuery) {
       setCity(cityFromQuery);
@@ -53,6 +60,10 @@ export default function Home() {
 
     if (tempModeFromQuery === "any") {
       setTemperatureMode("any");
+    }
+
+    if (recommendationModeFromQuery === "strict" || recommendationModeFromQuery === "lenient") {
+      setRecommendationMode(recommendationModeFromQuery);
     }
 
     if (groomFromQuery) {
@@ -140,8 +151,18 @@ export default function Home() {
         adjustedWorkdaySet,
         preferredTemperatureDateSet,
         ignoreTemperature,
+        recommendationMode,
       }),
-    [adjustedWorkdaySet, blockedWeddingDateSet, bridePreference, groomPreference, ignoreTemperature, preferredTemperatureDateSet, selectedYear],
+    [
+      adjustedWorkdaySet,
+      blockedWeddingDateSet,
+      bridePreference,
+      groomPreference,
+      ignoreTemperature,
+      preferredTemperatureDateSet,
+      recommendationMode,
+      selectedYear,
+    ],
   );
 
   const months = useMemo(
@@ -208,6 +229,7 @@ export default function Home() {
     queryParams.set("bride", brideZodiac === ANY_ZODIAC_OPTION ? "any" : toZodiacShareKey(brideZodiac));
     queryParams.set("year", String(selectedYear));
     queryParams.set("tempMode", temperatureMode);
+    queryParams.set("mode", recommendationMode);
 
     if (!ignoreTemperature) {
       queryParams.set("tempMin", String(normalizedMinTemp));
@@ -350,6 +372,18 @@ export default function Home() {
                   className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-200 transition focus:ring-2"
                 />
               </label>
+
+              <label className="flex flex-col gap-1.5 text-sm">
+                <span className="font-medium text-slate-700">择日模式</span>
+                <select
+                  value={recommendationMode}
+                  onChange={(event) => setRecommendationMode(event.target.value as RecommendationMode)}
+                  className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-200 transition focus:ring-2"
+                >
+                  <option value="lenient">宽松模式（可化解项可入选）</option>
+                  <option value="strict">严格模式（传统硬规则）</option>
+                </select>
+              </label>
             </form>
 
             <div className="mt-5 rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
@@ -360,6 +394,12 @@ export default function Home() {
               <p className="mt-1">
                 {selectedYear} 年共 {totalDates} 天 •{" "}
                 {ignoreTemperature ? "温度：不介意/其他" : `偏好 ${normalizedMinTemp}°C ~ ${normalizedMaxTemp}°C`}
+              </p>
+              <p className="mt-1">
+                当前模式：
+                <span className="font-semibold text-slate-700">
+                  {recommendationMode === "strict" ? " 严格模式" : " 宽松模式"}
+                </span>
               </p>
               <p className="mt-1">
                 生肖冲突日期：<span className="font-semibold text-slate-700">{zodiacConflictDateSet.size}</span>

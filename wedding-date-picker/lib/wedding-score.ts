@@ -43,6 +43,7 @@ type AlmanacAuspiciousInput = {
   adjustedWorkdaySet: Set<string>;
   preferredTemperatureDateSet: Set<string>;
   ignoreTemperature: boolean;
+  recommendationMode: RecommendationMode;
 };
 
 export type RankedAuspiciousDate = {
@@ -129,6 +130,7 @@ const ZODIAC_CONFLICT_HOUR_HINT: Record<ZodiacAnimal, string> = {
 };
 
 export type ZodiacPreference = ZodiacAnimal | "ANY";
+export type RecommendationMode = "strict" | "lenient";
 
 function isSpecificZodiac(zodiac: ZodiacPreference): zodiac is ZodiacAnimal {
   return zodiac !== "ANY";
@@ -312,6 +314,7 @@ export function getAlmanacAuspiciousAnalysis({
   adjustedWorkdaySet,
   preferredTemperatureDateSet,
   ignoreTemperature,
+  recommendationMode,
 }: AlmanacAuspiciousInput): AlmanacAuspiciousOutput {
   const zodiacConflictDateSet = new Set<string>();
   const zodiacCompatibleDateSet = new Set<string>();
@@ -483,7 +486,22 @@ export function getAlmanacAuspiciousAnalysis({
       .filter(Boolean)
       .join(" | ");
 
-    const isAuspiciousByRules =
+    const isStrictModePass =
+      isHuangDao &&
+      AUSPICIOUS_ZHI_XING.has(zhiXing) &&
+      !isYangGongJi &&
+      !isSanSang &&
+      !isSiLi &&
+      !isSiJue &&
+      naYinCheck.compatible &&
+      includesMarryInYi &&
+      excludesMarryInJi &&
+      isBingWuYearFor2026 &&
+      (ignoreTemperature || isPreferredTemp) &&
+      !isHolidayOrFestival &&
+      !hasDirectChong;
+
+    const isLenientModePass =
       !isYangGongJi &&
       !isSanSang &&
       !isSiLi &&
@@ -494,6 +512,8 @@ export function getAlmanacAuspiciousAnalysis({
       (ignoreTemperature || isPreferredTemp) &&
       !isHolidayOrFestival &&
       score >= 58;
+
+    const isAuspiciousByRules = recommendationMode === "strict" ? isStrictModePass : isLenientModePass;
 
     if (!isAuspiciousByRules) {
       return;
@@ -520,6 +540,8 @@ export function getAlmanacAuspiciousAnalysis({
     if (year === 2026) {
       reasons.push("农历丙午年");
     }
+
+    reasons.push(recommendationMode === "strict" ? "严格模式入选" : "宽松模式入选");
 
     if (lunarMonthRaw < 0 || leapMonth > 0) {
       reasons.push(leapMonth > 0 ? `已按闰${Math.abs(leapMonth)}月规则校验` : "闰月规则已校验");
