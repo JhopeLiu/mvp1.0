@@ -1,12 +1,12 @@
 "use client";
 
 import html2canvas from "html2canvas";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { YearCalendar } from "@/components/year-calendar";
 import { buildMonthGrids, getDatesForYear } from "@/lib/calendar";
 import { getPublicHolidayMap } from "@/lib/holidays";
 import { getPotentialGoodDateSet, getTemperaturePreferenceSets, getZodiacCompatibilitySets } from "@/lib/wedding-score";
-import { ZODIAC_OPTIONS } from "@/lib/zodiac";
+import { fromZodiacShareKey, toZodiacShareKey, ZODIAC_OPTIONS } from "@/lib/zodiac";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -19,6 +19,56 @@ export default function Home() {
   const [maxTemp, setMaxTemp] = useState("24");
   const [yearInput, setYearInput] = useState<string>(String(CURRENT_YEAR));
   const [isDownloadingCalendar, setIsDownloadingCalendar] = useState(false);
+  const [shareCopyStatus, setShareCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
+
+  useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const cityFromQuery = queryParams.get("city");
+    const groomFromQuery = queryParams.get("groom");
+    const brideFromQuery = queryParams.get("bride");
+    const yearFromQuery = queryParams.get("year");
+    const minTempFromQuery = queryParams.get("tempMin");
+    const maxTempFromQuery = queryParams.get("tempMax");
+
+    if (cityFromQuery) {
+      setCity(cityFromQuery);
+    }
+
+    if (yearFromQuery) {
+      setYearInput(yearFromQuery);
+    }
+
+    if (minTempFromQuery) {
+      setMinTemp(minTempFromQuery);
+    }
+
+    if (maxTempFromQuery) {
+      setMaxTemp(maxTempFromQuery);
+    }
+
+    if (groomFromQuery) {
+      const groomAnimal = fromZodiacShareKey(groomFromQuery);
+      if (groomAnimal) {
+        setGroomZodiac(groomAnimal);
+      }
+    }
+
+    if (brideFromQuery) {
+      const brideAnimal = fromZodiacShareKey(brideFromQuery);
+      if (brideAnimal) {
+        setBrideZodiac(brideAnimal);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (shareCopyStatus === "idle") {
+      return;
+    }
+
+    const timer = window.setTimeout(() => setShareCopyStatus("idle"), 2500);
+    return () => window.clearTimeout(timer);
+  }, [shareCopyStatus]);
 
   const selectedYear = useMemo(() => {
     const parsed = Number(yearInput);
@@ -108,6 +158,44 @@ export default function Home() {
       downloadLink.click();
     } finally {
       setIsDownloadingCalendar(false);
+    }
+  };
+
+  const getShareUrl = () => {
+    const queryParams = new URLSearchParams();
+    const normalizedCity = city.trim().toLowerCase();
+
+    if (normalizedCity) {
+      queryParams.set("city", normalizedCity);
+    }
+
+    queryParams.set("groom", toZodiacShareKey(groomZodiac));
+    queryParams.set("bride", toZodiacShareKey(brideZodiac));
+    queryParams.set("year", String(selectedYear));
+    queryParams.set("tempMin", String(normalizedMinTemp));
+    queryParams.set("tempMax", String(normalizedMaxTemp));
+
+    return `${window.location.origin}${window.location.pathname}?${queryParams.toString()}`;
+  };
+
+  const handleCopyShareLink = async () => {
+    const shareUrl = getShareUrl();
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setShareCopyStatus("copied");
+    } catch {
+      const textArea = document.createElement("textarea");
+      textArea.value = shareUrl;
+      textArea.setAttribute("readonly", "true");
+      textArea.style.position = "fixed";
+      textArea.style.left = "-9999px";
+      document.body.appendChild(textArea);
+      textArea.select();
+
+      const isCopied = document.execCommand("copy");
+      document.body.removeChild(textArea);
+      setShareCopyStatus(isCopied ? "copied" : "failed");
     }
   };
 
@@ -240,6 +328,13 @@ export default function Home() {
                 </p>
                 <button
                   type="button"
+                  onClick={handleCopyShareLink}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Copy Share Link
+                </button>
+                <button
+                  type="button"
                   onClick={handleDownloadCalendar}
                   disabled={isDownloadingCalendar}
                   className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
@@ -248,6 +343,12 @@ export default function Home() {
                 </button>
               </div>
             </div>
+            {shareCopyStatus === "copied" && (
+              <p className="mb-3 text-xs text-emerald-700">分享链接已复制到剪贴板。</p>
+            )}
+            {shareCopyStatus === "failed" && (
+              <p className="mb-3 text-xs text-rose-600">复制失败，请手动复制浏览器地址栏链接。</p>
+            )}
             <div ref={calendarExportRef} className="rounded-xl bg-white p-4">
               <h2 className="text-center text-2xl font-bold text-slate-900">婚礼吉日</h2>
               <p className="mt-1 text-center text-sm text-slate-600">{selectedYear} 年日历</p>
