@@ -28,6 +28,11 @@ components/
 lib/
   types/
     wedding-date.ts   # Request/response contracts
+utils/
+  cn.ts              # Shared className combiner (clsx)
+  date.ts            # Shared dayjs helpers
+  http.ts            # Shared axios client
+  index.ts           # Utility barrel exports
 ```
 
 ## Run locally
