@@ -2,6 +2,9 @@ export type CalendarDay = {
   dayNumber: number;
   dateISO: string;
   isWeekend: boolean;
+  isHoliday: boolean;
+  holidayName?: string;
+  isPotentialGoodDate: boolean;
 };
 
 export type MonthGrid = {
@@ -9,6 +12,15 @@ export type MonthGrid = {
   leadingBlankDays: number;
   days: CalendarDay[];
 };
+
+type BuildMonthGridsOptions = {
+  holidayByDateISO?: Record<string, string>;
+  potentialGoodDateSet?: Set<string>;
+};
+
+export function toISODateString(year: number, month: number, day: number): string {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
 
 export function getDatesForYear(year: number): Date[] {
   const dates: Date[] = [];
@@ -22,8 +34,10 @@ export function getDatesForYear(year: number): Date[] {
   return dates;
 }
 
-export function buildMonthGrids(year: number): MonthGrid[] {
+export function buildMonthGrids(year: number, options: BuildMonthGridsOptions = {}): MonthGrid[] {
   const allDates = getDatesForYear(year);
+  const holidayByDateISO = options.holidayByDateISO ?? {};
+  const potentialGoodDateSet = options.potentialGoodDateSet ?? new Set<string>();
 
   return Array.from({ length: 12 }, (_, monthIndex) => {
     const monthDates = allDates.filter((date) => date.getMonth() === monthIndex);
@@ -34,10 +48,16 @@ export function buildMonthGrids(year: number): MonthGrid[] {
       leadingBlankDays: firstDay.getDay(),
       days: monthDates.map((date) => {
         const dayOfWeek = date.getDay();
+        const dateISO = toISODateString(year, date.getMonth() + 1, date.getDate());
+        const holidayName = holidayByDateISO[dateISO];
+
         return {
           dayNumber: date.getDate(),
-          dateISO: date.toISOString().slice(0, 10),
+          dateISO,
           isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
+          isHoliday: Boolean(holidayName),
+          holidayName,
+          isPotentialGoodDate: potentialGoodDateSet.has(dateISO),
         };
       }),
     };
