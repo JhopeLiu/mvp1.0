@@ -3,33 +3,32 @@ import { getZodiacSignIndex, type ZodiacSign } from "@/lib/zodiac";
 
 const LUCKY_DAY_NUMBERS = new Set([6, 8, 9, 16, 18, 20, 22, 28]);
 
-const CLIMATE_PROFILES = {
-  tropical: [28, 28, 29, 30, 30, 30, 30, 30, 29, 29, 28, 28],
-  temperate: [4, 6, 10, 14, 18, 22, 25, 24, 20, 15, 9, 5],
-  cool: [2, 4, 7, 10, 14, 18, 21, 20, 16, 11, 7, 3],
-} as const;
+type MonthlyTemperatureRange = {
+  min: number;
+  max: number;
+};
 
-function inferClimateProfile(city: string): keyof typeof CLIMATE_PROFILES {
-  const normalizedCity = city.trim().toLowerCase();
-
-  if (["bangkok", "singapore", "jakarta", "dubai", "miami"].includes(normalizedCity)) {
-    return "tropical";
-  }
-
-  if (["london", "seattle", "berlin", "toronto", "vancouver"].includes(normalizedCity)) {
-    return "cool";
-  }
-
-  return "temperate";
-}
+// Mock "typical monthly ranges" dataset for MVP filtering.
+const MONTHLY_TEMPERATURE_RANGES: MonthlyTemperatureRange[] = [
+  { min: 10, max: 18 }, // Jan
+  { min: 11, max: 19 }, // Feb
+  { min: 14, max: 22 }, // Mar
+  { min: 18, max: 25 }, // Apr
+  { min: 21, max: 28 }, // May
+  { min: 24, max: 32 }, // Jun
+  { min: 26, max: 34 }, // Jul
+  { min: 25, max: 33 }, // Aug
+  { min: 22, max: 30 }, // Sep
+  { min: 18, max: 26 }, // Oct
+  { min: 14, max: 22 }, // Nov
+  { min: 11, max: 19 }, // Dec
+];
 
 type PotentialDateInput = {
   year: number;
-  city: string;
-  minTemp: number;
-  maxTemp: number;
   holidayByDateISO: Record<string, string>;
   zodiacConflictDateSet: Set<string>;
+  preferredTemperatureDateSet: Set<string>;
 };
 
 type ZodiacCompatibilityInput = {
@@ -43,6 +42,17 @@ type ZodiacCompatibilityOutput = {
   zodiacCompatibleDateSet: Set<string>;
 };
 
+type TemperaturePreferenceInput = {
+  year: number;
+  minTemp: number;
+  maxTemp: number;
+};
+
+type TemperaturePreferenceOutput = {
+  preferredTemperatureDateSet: Set<string>;
+  outOfPreferredTemperatureDateSet: Set<string>;
+};
+
 function getDateZodiacIndex(monthIndex: number, dayNumber: number): number {
   // Placeholder date-sign mapping for MVP (deterministic and simple).
   return (monthIndex * 2 + dayNumber) % 12;
@@ -50,6 +60,39 @@ function getDateZodiacIndex(monthIndex: number, dayNumber: number): number {
 
 function getOppositeSignIndex(index: number): number {
   return (index + 6) % 12;
+}
+
+function rangesOverlap(aMin: number, aMax: number, bMin: number, bMax: number): boolean {
+  return aMin <= bMax && bMin <= aMax;
+}
+
+export function getTemperaturePreferenceSets({
+  year,
+  minTemp,
+  maxTemp,
+}: TemperaturePreferenceInput): TemperaturePreferenceOutput {
+  const preferredTemperatureDateSet = new Set<string>();
+  const outOfPreferredTemperatureDateSet = new Set<string>();
+
+  getDatesForYear(year).forEach((date) => {
+    const monthIndex = date.getMonth();
+    const dayNumber = date.getDate();
+    const dateISO = toISODateString(year, monthIndex + 1, dayNumber);
+    const monthlyRange = MONTHLY_TEMPERATURE_RANGES[monthIndex];
+    const matchesPreference = rangesOverlap(minTemp, maxTemp, monthlyRange.min, monthlyRange.max);
+
+    if (matchesPreference) {
+      preferredTemperatureDateSet.add(dateISO);
+      return;
+    }
+
+    outOfPreferredTemperatureDateSet.add(dateISO);
+  });
+
+  return {
+    preferredTemperatureDateSet,
+    outOfPreferredTemperatureDateSet,
+  };
 }
 
 export function getZodiacCompatibilitySets({
@@ -90,13 +133,10 @@ export function getZodiacCompatibilitySets({
 
 export function getPotentialGoodDateSet({
   year,
-  city,
-  minTemp,
-  maxTemp,
   holidayByDateISO,
   zodiacConflictDateSet,
+  preferredTemperatureDateSet,
 }: PotentialDateInput): Set<string> {
-  const profile = CLIMATE_PROFILES[inferClimateProfile(city)];
   const dates = getDatesForYear(year);
   const result = new Set<string>();
 
@@ -104,12 +144,11 @@ export function getPotentialGoodDateSet({
     const dayOfWeek = date.getDay();
     const dayNumber = date.getDate();
     const monthIndex = date.getMonth();
-    const monthTemp = profile[monthIndex];
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
     const dateISO = toISODateString(year, monthIndex + 1, dayNumber);
     const isHoliday = Boolean(holidayByDateISO[dateISO]);
     const hasZodiacConflict = zodiacConflictDateSet.has(dateISO);
-    const tempMatch = monthTemp >= minTemp && monthTemp <= maxTemp;
+    const tempMatch = preferredTemperatureDateSet.has(dateISO);
 
     if (isWeekend && !isHoliday && !hasZodiacConflict && tempMatch && LUCKY_DAY_NUMBERS.has(dayNumber)) {
       result.add(dateISO);

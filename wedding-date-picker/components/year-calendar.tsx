@@ -22,6 +22,10 @@ export function YearCalendar({ year, months }: YearCalendarProps) {
             Zodiac conflict
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
+            <span className="h-2 w-2 rounded-full bg-slate-300" />
+            Temp out of range
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
             <span className="h-2 w-2 rounded-full bg-indigo-400" />
             Zodiac compatible
           </span>
@@ -55,6 +59,8 @@ export function YearCalendar({ year, months }: YearCalendarProps) {
                   className={`relative flex h-8 items-center justify-center rounded-md border ${
                     day.hasZodiacConflict
                       ? "border-slate-300 bg-slate-100 text-slate-400"
+                      : day.isOutsidePreferredTempRange
+                        ? "border-slate-200 bg-slate-100 text-slate-400 opacity-60"
                       : day.isRecommendedDate
                         ? "border-pink-300 bg-pink-50 text-pink-700"
                         : day.isWeekend
@@ -66,6 +72,8 @@ export function YearCalendar({ year, months }: YearCalendarProps) {
                   title={
                     day.hasZodiacConflict
                       ? `${day.dateISO} • Zodiac conflict`
+                      : day.isOutsidePreferredTempRange
+                        ? `${day.dateISO} • Outside preferred temperature range`
                       : day.isRecommendedDate
                         ? `${day.dateISO} • Recommended date`
                         : `${day.dateISO} • Zodiac compatible`

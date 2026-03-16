@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { YearCalendar } from "@/components/year-calendar";
 import { buildMonthGrids, getDatesForYear } from "@/lib/calendar";
 import { getPublicHolidayMap } from "@/lib/holidays";
-import { getPotentialGoodDateSet, getZodiacCompatibilitySets } from "@/lib/wedding-score";
+import { getPotentialGoodDateSet, getTemperaturePreferenceSets, getZodiacCompatibilitySets } from "@/lib/wedding-score";
 import { ZODIAC_OPTIONS } from "@/lib/zodiac";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -36,6 +36,15 @@ export default function Home() {
   }, [maxTemp, minTemp]);
 
   const holidayMap = useMemo(() => getPublicHolidayMap(selectedYear), [selectedYear]);
+  const { preferredTemperatureDateSet, outOfPreferredTemperatureDateSet } = useMemo(
+    () =>
+      getTemperaturePreferenceSets({
+        year: selectedYear,
+        minTemp: normalizedMinTemp,
+        maxTemp: normalizedMaxTemp,
+      }),
+    [normalizedMaxTemp, normalizedMinTemp, selectedYear],
+  );
   const { zodiacConflictDateSet, zodiacCompatibleDateSet } = useMemo(
     () =>
       getZodiacCompatibilitySets({
@@ -50,13 +59,11 @@ export default function Home() {
     () =>
       getPotentialGoodDateSet({
         year: selectedYear,
-        city,
-        minTemp: normalizedMinTemp,
-        maxTemp: normalizedMaxTemp,
         holidayByDateISO: holidayMap,
         zodiacConflictDateSet,
+        preferredTemperatureDateSet,
       }),
-    [city, holidayMap, normalizedMaxTemp, normalizedMinTemp, selectedYear, zodiacConflictDateSet],
+    [holidayMap, preferredTemperatureDateSet, selectedYear, zodiacConflictDateSet],
   );
 
   const months = useMemo(
@@ -65,9 +72,17 @@ export default function Home() {
         holidayByDateISO: holidayMap,
         zodiacConflictDateSet,
         zodiacCompatibleDateSet,
+        outOfPreferredTemperatureDateSet,
         recommendedDateSet,
       }),
-    [holidayMap, recommendedDateSet, selectedYear, zodiacCompatibleDateSet, zodiacConflictDateSet],
+    [
+      holidayMap,
+      outOfPreferredTemperatureDateSet,
+      recommendedDateSet,
+      selectedYear,
+      zodiacCompatibleDateSet,
+      zodiacConflictDateSet,
+    ],
   );
   const totalDates = useMemo(() => getDatesForYear(selectedYear).length, [selectedYear]);
 
@@ -180,6 +195,10 @@ export default function Home() {
               </p>
               <p className="mt-1">
                 Zodiac conflicts: <span className="font-semibold text-slate-700">{zodiacConflictDateSet.size}</span>
+              </p>
+              <p className="mt-1">
+                Outside temp range:{" "}
+                <span className="font-semibold text-slate-700">{outOfPreferredTemperatureDateSet.size}</span>
               </p>
               <p className="mt-1">
                 Recommended dates: <span className="font-semibold text-pink-700">{recommendedDateSet.size}</span>
