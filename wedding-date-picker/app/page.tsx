@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { YearCalendar } from "@/components/year-calendar";
 import { buildMonthGrids, getDatesForYear } from "@/lib/calendar";
 import { getPublicHolidayMap } from "@/lib/holidays";
-import { getPotentialGoodDateSet } from "@/lib/wedding-score";
+import { getPotentialGoodDateSet, getZodiacCompatibilitySets } from "@/lib/wedding-score";
 import { ZODIAC_OPTIONS } from "@/lib/zodiac";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -36,7 +36,17 @@ export default function Home() {
   }, [maxTemp, minTemp]);
 
   const holidayMap = useMemo(() => getPublicHolidayMap(selectedYear), [selectedYear]);
-  const potentialGoodDateSet = useMemo(
+  const { zodiacConflictDateSet, zodiacCompatibleDateSet } = useMemo(
+    () =>
+      getZodiacCompatibilitySets({
+        year: selectedYear,
+        groomZodiac,
+        brideZodiac,
+      }),
+    [brideZodiac, groomZodiac, selectedYear],
+  );
+
+  const recommendedDateSet = useMemo(
     () =>
       getPotentialGoodDateSet({
         year: selectedYear,
@@ -44,17 +54,20 @@ export default function Home() {
         minTemp: normalizedMinTemp,
         maxTemp: normalizedMaxTemp,
         holidayByDateISO: holidayMap,
+        zodiacConflictDateSet,
       }),
-    [city, holidayMap, normalizedMaxTemp, normalizedMinTemp, selectedYear],
+    [city, holidayMap, normalizedMaxTemp, normalizedMinTemp, selectedYear, zodiacConflictDateSet],
   );
 
   const months = useMemo(
     () =>
       buildMonthGrids(selectedYear, {
         holidayByDateISO: holidayMap,
-        potentialGoodDateSet,
+        zodiacConflictDateSet,
+        zodiacCompatibleDateSet,
+        recommendedDateSet,
       }),
-    [holidayMap, potentialGoodDateSet, selectedYear],
+    [holidayMap, recommendedDateSet, selectedYear, zodiacCompatibleDateSet, zodiacConflictDateSet],
   );
   const totalDates = useMemo(() => getDatesForYear(selectedYear).length, [selectedYear]);
 
@@ -166,7 +179,10 @@ export default function Home() {
                 {totalDates} dates in {selectedYear} • preferred {normalizedMinTemp}°C to {normalizedMaxTemp}°C
               </p>
               <p className="mt-1">
-                Potential dates found: <span className="font-semibold text-emerald-700">{potentialGoodDateSet.size}</span>
+                Zodiac conflicts: <span className="font-semibold text-slate-700">{zodiacConflictDateSet.size}</span>
+              </p>
+              <p className="mt-1">
+                Recommended dates: <span className="font-semibold text-pink-700">{recommendedDateSet.size}</span>
               </p>
             </div>
           </aside>

@@ -4,7 +4,9 @@ export type CalendarDay = {
   isWeekend: boolean;
   isHoliday: boolean;
   holidayName?: string;
-  isPotentialGoodDate: boolean;
+  hasZodiacConflict: boolean;
+  isZodiacCompatible: boolean;
+  isRecommendedDate: boolean;
 };
 
 export type MonthGrid = {
@@ -15,7 +17,9 @@ export type MonthGrid = {
 
 type BuildMonthGridsOptions = {
   holidayByDateISO?: Record<string, string>;
-  potentialGoodDateSet?: Set<string>;
+  zodiacConflictDateSet?: Set<string>;
+  zodiacCompatibleDateSet?: Set<string>;
+  recommendedDateSet?: Set<string>;
 };
 
 export function toISODateString(year: number, month: number, day: number): string {
@@ -37,7 +41,9 @@ export function getDatesForYear(year: number): Date[] {
 export function buildMonthGrids(year: number, options: BuildMonthGridsOptions = {}): MonthGrid[] {
   const allDates = getDatesForYear(year);
   const holidayByDateISO = options.holidayByDateISO ?? {};
-  const potentialGoodDateSet = options.potentialGoodDateSet ?? new Set<string>();
+  const zodiacConflictDateSet = options.zodiacConflictDateSet ?? new Set<string>();
+  const zodiacCompatibleDateSet = options.zodiacCompatibleDateSet ?? new Set<string>();
+  const recommendedDateSet = options.recommendedDateSet ?? new Set<string>();
 
   return Array.from({ length: 12 }, (_, monthIndex) => {
     const monthDates = allDates.filter((date) => date.getMonth() === monthIndex);
@@ -57,7 +63,9 @@ export function buildMonthGrids(year: number, options: BuildMonthGridsOptions = 
           isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
           isHoliday: Boolean(holidayName),
           holidayName,
-          isPotentialGoodDate: potentialGoodDateSet.has(dateISO),
+          hasZodiacConflict: zodiacConflictDateSet.has(dateISO),
+          isZodiacCompatible: zodiacCompatibleDateSet.has(dateISO),
+          isRecommendedDate: recommendedDateSet.has(dateISO),
         };
       }),
     };

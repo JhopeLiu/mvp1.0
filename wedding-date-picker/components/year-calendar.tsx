@@ -18,12 +18,16 @@ export function YearCalendar({ year, months }: YearCalendarProps) {
             Weekend
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
-            <span className="h-2 w-2 rounded-full bg-amber-400" />
-            Holiday
+            <span className="h-2 w-2 rounded-full bg-slate-400" />
+            Zodiac conflict
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
-            <span className="h-2 w-2 rounded-full bg-emerald-400" />
-            Potential date
+            <span className="h-2 w-2 rounded-full bg-indigo-400" />
+            Zodiac compatible
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
+            <span className="text-pink-500">♥</span>
+            Recommended
           </span>
         </div>
       </div>
@@ -48,18 +52,27 @@ export function YearCalendar({ year, months }: YearCalendarProps) {
               {month.days.map((day) => (
                 <span
                   key={day.dateISO}
-                  className={`flex h-8 items-center justify-center rounded-md border ${
-                    day.isHoliday
-                      ? "border-amber-300 bg-amber-50 text-amber-800"
-                      : day.isPotentialGoodDate
-                        ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                  className={`relative flex h-8 items-center justify-center rounded-md border ${
+                    day.hasZodiacConflict
+                      ? "border-slate-300 bg-slate-100 text-slate-400"
+                      : day.isRecommendedDate
+                        ? "border-pink-300 bg-pink-50 text-pink-700"
                         : day.isWeekend
                           ? "border-rose-300 bg-rose-50 text-rose-700"
-                          : "border-slate-200 bg-slate-50 text-slate-700"
+                          : day.isZodiacCompatible
+                            ? "border-indigo-200 bg-indigo-50 text-indigo-700"
+                            : "border-slate-200 bg-slate-50 text-slate-700"
                   }`}
-                  title={day.holidayName ? `${day.dateISO} • ${day.holidayName}` : day.dateISO}
+                  title={
+                    day.hasZodiacConflict
+                      ? `${day.dateISO} • Zodiac conflict`
+                      : day.isRecommendedDate
+                        ? `${day.dateISO} • Recommended date`
+                        : `${day.dateISO} • Zodiac compatible`
+                  }
                 >
                   {day.dayNumber}
+                  {day.isRecommendedDate && <span className="absolute right-0.5 top-0 text-[10px] leading-none">♥</span>}
                 </span>
               ))}
             </div>
