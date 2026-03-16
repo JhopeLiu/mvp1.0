@@ -14,8 +14,16 @@ export function YearCalendar({ year, months }: YearCalendarProps) {
         <h2 className="text-xl font-semibold text-slate-900">{year} 年日历</h2>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
+            <span className="h-2 w-2 rounded-full bg-amber-400" />
+            节假日/传统节日
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
             <span className="h-2 w-2 rounded-full bg-rose-400" />
             周末
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
+            <span className="h-2 w-2 rounded-full bg-orange-400" />
+            调休工作日
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
             <span className="h-2 w-2 rounded-full bg-slate-400" />
@@ -59,6 +67,10 @@ export function YearCalendar({ year, months }: YearCalendarProps) {
                   className={`relative flex h-8 items-center justify-center rounded-md border ${
                     day.hasZodiacConflict
                       ? "border-slate-300 bg-slate-100 text-slate-400"
+                      : day.isHoliday
+                        ? "border-amber-300 bg-amber-50 text-amber-800"
+                      : day.isAdjustedWorkday
+                        ? "border-orange-300 bg-orange-50 text-orange-700"
                       : day.isOutsidePreferredTempRange
                         ? "border-slate-200 bg-slate-100 text-slate-400 opacity-60"
                       : day.isRecommendedDate
@@ -72,6 +84,10 @@ export function YearCalendar({ year, months }: YearCalendarProps) {
                   title={
                     day.hasZodiacConflict
                       ? `${day.dateISO} • 生肖冲突`
+                      : day.isHoliday
+                        ? `${day.dateISO} • ${day.holidayName}`
+                      : day.isAdjustedWorkday
+                        ? `${day.dateISO} • 调休工作日`
                       : day.isOutsidePreferredTempRange
                         ? `${day.dateISO} • 超出偏好温度范围`
                       : day.isRecommendedDate

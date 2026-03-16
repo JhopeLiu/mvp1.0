@@ -38,7 +38,8 @@ type AlmanacAuspiciousInput = {
   year: number;
   groomZodiac: ZodiacAnimal;
   brideZodiac: ZodiacAnimal;
-  holidayByDateISO: Record<string, string>;
+  blockedWeddingDateSet: Set<string>;
+  adjustedWorkdaySet: Set<string>;
   preferredTemperatureDateSet: Set<string>;
 };
 
@@ -47,7 +48,6 @@ export type RankedAuspiciousDate = {
   score: number;
   reason: string;
   lunarText: string;
-  isHolidayPeriod: boolean;
 };
 
 type AlmanacAuspiciousOutput = {
@@ -109,11 +109,6 @@ const ELEMENT_RESTRAIN_MAP: Record<"金" | "木" | "水" | "火" | "土", "金" 
   金: "木",
 };
 
-function getDateFromISO(dateISO: string): Date {
-  const [year, month, day] = dateISO.split("-").map((value) => Number(value));
-  return new Date(year, month - 1, day);
-}
-
 function addDays(date: Date, days: number): Date {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
@@ -166,23 +161,6 @@ function getSiJueDateSet(year: number): Set<string> {
     const targetDate = addDays(termDate, -1);
     if (targetDate.getFullYear() === year) {
       result.add(toISODateString(targetDate.getFullYear(), targetDate.getMonth() + 1, targetDate.getDate()));
-    }
-  });
-
-  return result;
-}
-
-function getHolidayPeriodSet(holidayByDateISO: Record<string, string>): Set<string> {
-  const result = new Set<string>();
-
-  Object.entries(holidayByDateISO).forEach(([dateISO, holidayName]) => {
-    const startDate = getDateFromISO(dateISO);
-    const periodLength =
-      holidayName === "国庆节" ? 7 : holidayName === "劳动节" ? 5 : holidayName === "元旦" ? 3 : 1;
-
-    for (let i = 0; i < periodLength; i += 1) {
-      const currentDate = addDays(startDate, i);
-      result.add(toISODateString(currentDate.getFullYear(), currentDate.getMonth() + 1, currentDate.getDate()));
     }
   });
 
@@ -282,7 +260,8 @@ export function getAlmanacAuspiciousAnalysis({
   year,
   groomZodiac,
   brideZodiac,
-  holidayByDateISO,
+  blockedWeddingDateSet,
+  adjustedWorkdaySet,
   preferredTemperatureDateSet,
 }: AlmanacAuspiciousInput): AlmanacAuspiciousOutput {
   const zodiacConflictDateSet = new Set<string>();
@@ -290,7 +269,6 @@ export function getAlmanacAuspiciousAnalysis({
   const rankedAuspiciousDates: RankedAuspiciousDate[] = [];
   const siLiDateSet = getSiLiDateSet(year);
   const siJueDateSet = getSiJueDateSet(year);
-  const holidayPeriodSet = getHolidayPeriodSet(holidayByDateISO);
   const leapMonth = LunarYear.fromYear(year).getLeapMonth();
 
   getDatesForYear(year).forEach((date) => {
@@ -312,9 +290,9 @@ export function getAlmanacAuspiciousAnalysis({
     const isSanSang = dayXiongSha.includes("三丧");
     const isSiLi = siLiDateSet.has(dateISO);
     const isSiJue = siJueDateSet.has(dateISO);
-    const isHoliday = Boolean(holidayByDateISO[dateISO]);
-    const isHolidayPeriod = holidayPeriodSet.has(dateISO);
+    const isHolidayOrFestival = blockedWeddingDateSet.has(dateISO);
     const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+    const isAdjustedWorkday = adjustedWorkdaySet.has(dateISO);
     const isPreferredTemp = preferredTemperatureDateSet.has(dateISO);
     const isBingWuYearFor2026 = year !== 2026 || lunar.getYearInGanZhi() === "丙午";
     const dayChongShengXiao = lunar.getDayChongShengXiao();
@@ -340,6 +318,7 @@ export function getAlmanacAuspiciousAnalysis({
       excludesMarryInJi &&
       isBingWuYearFor2026 &&
       isPreferredTemp &&
+      !isHolidayOrFestival &&
       !hasDirectChong;
 
     if (!isAuspiciousByRules) {
@@ -351,14 +330,11 @@ export function getAlmanacAuspiciousAnalysis({
 
     score += naYinCheck.score;
 
-    if (isHolidayPeriod) {
-      score += 15;
-      reasons.push(isHoliday ? `恰逢${holidayByDateISO[dateISO]}假期` : "位于节假期区间，便于宾客参与");
-    }
-
-    if (isWeekend) {
+    if (isWeekend && !isAdjustedWorkday) {
       score += 6;
       reasons.push("周末档期");
+    } else if (isAdjustedWorkday) {
+      reasons.push("调休工作日，周末便利性较低");
     }
 
     if (lunar.getDayTianShenLuck() === "吉") {
@@ -378,17 +354,12 @@ export function getAlmanacAuspiciousAnalysis({
       score,
       reason: reasons.join("，"),
       lunarText: `${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}`,
-      isHolidayPeriod,
     });
   });
 
   rankedAuspiciousDates.sort((a, b) => {
     if (b.score !== a.score) {
       return b.score - a.score;
-    }
-
-    if (a.isHolidayPeriod !== b.isHolidayPeriod) {
-      return Number(b.isHolidayPeriod) - Number(a.isHolidayPeriod);
     }
 
     return a.dateISO.localeCompare(b.dateISO);

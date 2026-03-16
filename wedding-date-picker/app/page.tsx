@@ -4,7 +4,7 @@ import html2canvas from "html2canvas";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { YearCalendar } from "@/components/year-calendar";
 import { buildMonthGrids, getDatesForYear } from "@/lib/calendar";
-import { getPublicHolidayMap } from "@/lib/holidays";
+import { getHolidayContext } from "@/lib/holidays";
 import { getAlmanacAuspiciousAnalysis, getTemperaturePreferenceSets } from "@/lib/wedding-score";
 import { fromZodiacShareKey, toZodiacShareKey, ZODIAC_OPTIONS } from "@/lib/zodiac";
 
@@ -88,7 +88,10 @@ export default function Home() {
     return safeMin <= safeMax ? [safeMin, safeMax] : [safeMax, safeMin];
   }, [maxTemp, minTemp]);
 
-  const holidayMap = useMemo(() => getPublicHolidayMap(selectedYear), [selectedYear]);
+  const holidayContext = useMemo(() => getHolidayContext(selectedYear), [selectedYear]);
+  const holidayMap = holidayContext.holidayByDateISO;
+  const blockedWeddingDateSet = holidayContext.blockedWeddingDateSet;
+  const adjustedWorkdaySet = holidayContext.adjustedWorkdaySet;
   const { preferredTemperatureDateSet, outOfPreferredTemperatureDateSet } = useMemo(
     () =>
       getTemperaturePreferenceSets({
@@ -104,16 +107,18 @@ export default function Home() {
         year: selectedYear,
         groomZodiac,
         brideZodiac,
-        holidayByDateISO: holidayMap,
+        blockedWeddingDateSet,
+        adjustedWorkdaySet,
         preferredTemperatureDateSet,
       }),
-    [brideZodiac, groomZodiac, holidayMap, preferredTemperatureDateSet, selectedYear],
+    [adjustedWorkdaySet, blockedWeddingDateSet, brideZodiac, groomZodiac, preferredTemperatureDateSet, selectedYear],
   );
 
   const months = useMemo(
     () =>
       buildMonthGrids(selectedYear, {
         holidayByDateISO: holidayMap,
+        adjustedWorkdaySet,
         zodiacConflictDateSet,
         zodiacCompatibleDateSet,
         outOfPreferredTemperatureDateSet,
@@ -124,6 +129,7 @@ export default function Home() {
       outOfPreferredTemperatureDateSet,
       recommendedDateSet,
       selectedYear,
+      adjustedWorkdaySet,
       zodiacCompatibleDateSet,
       zodiacConflictDateSet,
     ],
@@ -309,6 +315,12 @@ export default function Home() {
               </p>
               <p className="mt-1">
                 黄历吉日候选：<span className="font-semibold text-emerald-700">{rankedAuspiciousDates.length}</span>
+              </p>
+              <p className="mt-1">
+                节假日/传统节日（禁选）：<span className="font-semibold text-amber-700">{blockedWeddingDateSet.size}</span>
+              </p>
+              <p className="mt-1">
+                调休工作日：<span className="font-semibold text-orange-700">{adjustedWorkdaySet.size}</span>
               </p>
               {selectedYear === 2026 && (
                 <p className="mt-1 text-slate-500">

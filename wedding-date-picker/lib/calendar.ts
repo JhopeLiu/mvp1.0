@@ -2,6 +2,7 @@ export type CalendarDay = {
   dayNumber: number;
   dateISO: string;
   isWeekend: boolean;
+  isAdjustedWorkday: boolean;
   isHoliday: boolean;
   holidayName?: string;
   hasZodiacConflict: boolean;
@@ -18,6 +19,7 @@ export type MonthGrid = {
 
 type BuildMonthGridsOptions = {
   holidayByDateISO?: Record<string, string>;
+  adjustedWorkdaySet?: Set<string>;
   zodiacConflictDateSet?: Set<string>;
   zodiacCompatibleDateSet?: Set<string>;
   outOfPreferredTemperatureDateSet?: Set<string>;
@@ -43,6 +45,7 @@ export function getDatesForYear(year: number): Date[] {
 export function buildMonthGrids(year: number, options: BuildMonthGridsOptions = {}): MonthGrid[] {
   const allDates = getDatesForYear(year);
   const holidayByDateISO = options.holidayByDateISO ?? {};
+  const adjustedWorkdaySet = options.adjustedWorkdaySet ?? new Set<string>();
   const zodiacConflictDateSet = options.zodiacConflictDateSet ?? new Set<string>();
   const zodiacCompatibleDateSet = options.zodiacCompatibleDateSet ?? new Set<string>();
   const outOfPreferredTemperatureDateSet = options.outOfPreferredTemperatureDateSet ?? new Set<string>();
@@ -64,6 +67,7 @@ export function buildMonthGrids(year: number, options: BuildMonthGridsOptions = 
           dayNumber: date.getDate(),
           dateISO,
           isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
+          isAdjustedWorkday: adjustedWorkdaySet.has(dateISO),
           isHoliday: Boolean(holidayName),
           holidayName,
           hasZodiacConflict: zodiacConflictDateSet.has(dateISO),
