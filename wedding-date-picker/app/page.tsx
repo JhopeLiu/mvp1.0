@@ -60,17 +60,22 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
-      <div className="mx-auto max-w-[1600px] p-4 md:p-6 xl:p-8">
+      <div className="mx-auto max-w-[1700px] p-4 md:p-6 xl:p-8">
         <header className="mb-5 rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm backdrop-blur">
-          <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">Wedding Date Picker MVP</h1>
+          <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">Wedding Date Picker</h1>
           <p className="mt-2 text-sm text-slate-600">
             Enter preferences on the left and explore suggested dates in the yearly calendar on the right.
           </p>
         </header>
 
-        <div className="grid gap-5 lg:grid-cols-[340px,1fr]">
-          <aside className="h-fit rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur lg:sticky lg:top-6">
-            <h2 className="text-lg font-semibold text-slate-900">Wedding Preferences</h2>
+        <div className="grid gap-5 md:grid-cols-[350px,1fr]">
+          <aside className="h-fit rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur md:sticky md:top-6">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-slate-900">Wedding Preferences</h2>
+              <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                Auto refresh
+              </span>
+            </div>
             <form className="mt-4 space-y-4">
               <label className="flex flex-col gap-1.5 text-sm">
                 <span className="font-medium text-slate-700">City</span>
@@ -116,25 +121,31 @@ export default function Home() {
               <div className="text-sm">
                 <span className="font-medium text-slate-700">Preferred temperature range (°C)</span>
                 <div className="mt-1.5 grid grid-cols-2 gap-2">
-                  <input
-                    type="number"
-                    value={minTemp}
-                    onChange={(event) => setMinTemp(event.target.value)}
-                    placeholder="Min"
-                    className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-200 transition focus:ring-2"
-                  />
-                  <input
-                    type="number"
-                    value={maxTemp}
-                    onChange={(event) => setMaxTemp(event.target.value)}
-                    placeholder="Max"
-                    className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-200 transition focus:ring-2"
-                  />
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs text-slate-500">Min</span>
+                    <input
+                      type="number"
+                      value={minTemp}
+                      onChange={(event) => setMinTemp(event.target.value)}
+                      placeholder="Min"
+                      className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-200 transition focus:ring-2"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-xs text-slate-500">Max</span>
+                    <input
+                      type="number"
+                      value={maxTemp}
+                      onChange={(event) => setMaxTemp(event.target.value)}
+                      placeholder="Max"
+                      className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-200 transition focus:ring-2"
+                    />
+                  </label>
                 </div>
               </div>
 
               <label className="flex flex-col gap-1.5 text-sm">
-                <span className="font-medium text-slate-700">Year</span>
+                <span className="font-medium text-slate-700">Wedding year</span>
                 <input
                   type="number"
                   min={1900}
@@ -161,6 +172,12 @@ export default function Home() {
           </aside>
 
           <section className="rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm backdrop-blur">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Calendar view</h3>
+              <p className="text-xs text-slate-500">
+                Updates instantly when city, zodiac, year, or temperature inputs change.
+              </p>
+            </div>
             <YearCalendar year={selectedYear} months={months} />
           </section>
         </div>
