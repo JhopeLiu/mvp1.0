@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { YearCalendar } from "@/components/year-calendar";
 import { buildMonthGrids, getDatesForYear } from "@/lib/calendar";
 import { getPublicHolidayMap } from "@/lib/holidays";
-import { getPotentialGoodDateSet, getTemperaturePreferenceSets, getZodiacCompatibilitySets } from "@/lib/wedding-score";
+import { getAlmanacAuspiciousAnalysis, getTemperaturePreferenceSets } from "@/lib/wedding-score";
 import { fromZodiacShareKey, toZodiacShareKey, ZODIAC_OPTIONS } from "@/lib/zodiac";
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -98,25 +98,16 @@ export default function Home() {
       }),
     [normalizedMaxTemp, normalizedMinTemp, selectedYear],
   );
-  const { zodiacConflictDateSet, zodiacCompatibleDateSet } = useMemo(
+  const { zodiacConflictDateSet, zodiacCompatibleDateSet, recommendedDateSet, rankedAuspiciousDates, leapMonth } = useMemo(
     () =>
-      getZodiacCompatibilitySets({
+      getAlmanacAuspiciousAnalysis({
         year: selectedYear,
         groomZodiac,
         brideZodiac,
-      }),
-    [brideZodiac, groomZodiac, selectedYear],
-  );
-
-  const recommendedDateSet = useMemo(
-    () =>
-      getPotentialGoodDateSet({
-        year: selectedYear,
         holidayByDateISO: holidayMap,
-        zodiacConflictDateSet,
         preferredTemperatureDateSet,
       }),
-    [holidayMap, preferredTemperatureDateSet, selectedYear, zodiacConflictDateSet],
+    [brideZodiac, groomZodiac, holidayMap, preferredTemperatureDateSet, selectedYear],
   );
 
   const months = useMemo(
@@ -316,6 +307,33 @@ export default function Home() {
               <p className="mt-1">
                 推荐日期：<span className="font-semibold text-pink-700">{recommendedDateSet.size}</span>
               </p>
+              <p className="mt-1">
+                黄历吉日候选：<span className="font-semibold text-emerald-700">{rankedAuspiciousDates.length}</span>
+              </p>
+              {selectedYear === 2026 && (
+                <p className="mt-1 text-slate-500">
+                  农历年校验：按丙午年计算{leapMonth > 0 ? `（含闰${Math.abs(leapMonth)}月规则）` : "（2026 无闰月）"}
+                </p>
+              )}
+            </div>
+
+            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
+              <h3 className="text-sm font-semibold text-slate-800">黄历优选日期（按吉利度排序）</h3>
+              <ul className="mt-2 max-h-72 space-y-2 overflow-y-auto pr-1 text-xs text-slate-700">
+                {rankedAuspiciousDates.slice(0, 12).map((item, index) => (
+                  <li key={item.dateISO} className="rounded-lg bg-slate-50 p-2">
+                    <p className="font-semibold text-slate-900">
+                      #{index + 1} {item.dateISO}（{item.lunarText}） · {item.score}分
+                    </p>
+                    <p className="mt-1 text-slate-600">{item.reason}</p>
+                  </li>
+                ))}
+                {rankedAuspiciousDates.length === 0 && (
+                  <li className="rounded-lg bg-slate-50 p-2 text-slate-500">
+                    当前条件下暂无满足黄历规则的吉日，请调整年份或温度范围后重试。
+                  </li>
+                )}
+              </ul>
             </div>
           </aside>
 
