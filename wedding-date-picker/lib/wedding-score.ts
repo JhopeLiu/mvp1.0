@@ -27,6 +27,7 @@ type TemperaturePreferenceInput = {
   year: number;
   minTemp: number;
   maxTemp: number;
+  ignoreTemperature: boolean;
 };
 
 type TemperaturePreferenceOutput = {
@@ -36,11 +37,12 @@ type TemperaturePreferenceOutput = {
 
 type AlmanacAuspiciousInput = {
   year: number;
-  groomZodiac: ZodiacAnimal;
-  brideZodiac: ZodiacAnimal;
+  groomZodiac: ZodiacPreference;
+  brideZodiac: ZodiacPreference;
   blockedWeddingDateSet: Set<string>;
   adjustedWorkdaySet: Set<string>;
   preferredTemperatureDateSet: Set<string>;
+  ignoreTemperature: boolean;
 };
 
 export type RankedAuspiciousDate = {
@@ -111,6 +113,12 @@ const ELEMENT_RESTRAIN_MAP: Record<"金" | "木" | "水" | "火" | "土", "金" 
   金: "木",
 };
 
+export type ZodiacPreference = ZodiacAnimal | "ANY";
+
+function isSpecificZodiac(zodiac: ZodiacPreference): zodiac is ZodiacAnimal {
+  return zodiac !== "ANY";
+}
+
 function addDays(date: Date, days: number): Date {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
@@ -179,9 +187,19 @@ function getNaYinElement(dayNaYin: string): "金" | "木" | "水" | "火" | "土
 
 function evaluateNaYinCompatibility(
   dayElement: "金" | "木" | "水" | "火" | "土" | null,
-  groomZodiac: ZodiacAnimal,
-  brideZodiac: ZodiacAnimal,
+  groomZodiac: ZodiacPreference,
+  brideZodiac: ZodiacPreference,
 ) {
+  const preferredZodiacs = [groomZodiac, brideZodiac].filter(isSpecificZodiac);
+
+  if (preferredZodiacs.length === 0) {
+    return {
+      compatible: true,
+      score: 0,
+      reason: "生肖不设限制",
+    };
+  }
+
   if (!dayElement) {
     return {
       compatible: false,
@@ -190,38 +208,35 @@ function evaluateNaYinCompatibility(
     };
   }
 
-  const groomElement = ZODIAC_ELEMENT_MAP[groomZodiac];
-  const brideElement = ZODIAC_ELEMENT_MAP[brideZodiac];
+  const preferredElements = preferredZodiacs.map((zodiac) => ZODIAC_ELEMENT_MAP[zodiac]);
+  const preferredText = preferredZodiacs.map((zodiac) => `属${zodiac}`).join("、");
   const dayRestrains = ELEMENT_RESTRAIN_MAP[dayElement];
-  const restrainsDay = ELEMENT_RESTRAIN_MAP[groomElement] === dayElement || ELEMENT_RESTRAIN_MAP[brideElement] === dayElement;
+  const restrainsDay = preferredElements.some((element) => ELEMENT_RESTRAIN_MAP[element] === dayElement);
+  const dayRestrainsPreferred = preferredElements.includes(dayRestrains);
 
-  if (dayRestrains === groomElement || dayRestrains === brideElement || restrainsDay) {
+  if (dayRestrainsPreferred || restrainsDay) {
     return {
       compatible: false,
       score: 0,
-      reason: `纳音${dayElement}与生肖五行相冲`,
+      reason: `纳音${dayElement}与${preferredText}五行相冲`,
     };
   }
 
   const generateTargets = new Set([ELEMENT_GENERATE_MAP[dayElement]]);
   let score = 6;
 
-  if (generateTargets.has(groomElement)) {
-    score += 2;
-  }
-
-  if (generateTargets.has(brideElement)) {
-    score += 2;
-  }
-
-  if (dayElement === groomElement || dayElement === brideElement) {
-    score += 1;
-  }
+  preferredElements.forEach((element) => {
+    if (generateTargets.has(element)) {
+      score += 2;
+    } else if (dayElement === element) {
+      score += 1;
+    }
+  });
 
   return {
     compatible: true,
     score,
-    reason: `纳音${dayElement}与属${groomZodiac}、属${brideZodiac}相合`,
+    reason: `纳音${dayElement}与${preferredText}相合`,
   };
 }
 
@@ -233,9 +248,21 @@ export function getTemperaturePreferenceSets({
   year,
   minTemp,
   maxTemp,
+  ignoreTemperature,
 }: TemperaturePreferenceInput): TemperaturePreferenceOutput {
   const preferredTemperatureDateSet = new Set<string>();
   const outOfPreferredTemperatureDateSet = new Set<string>();
+
+  if (ignoreTemperature) {
+    getDatesForYear(year).forEach((date) => {
+      preferredTemperatureDateSet.add(toISODateString(year, date.getMonth() + 1, date.getDate()));
+    });
+
+    return {
+      preferredTemperatureDateSet,
+      outOfPreferredTemperatureDateSet,
+    };
+  }
 
   getDatesForYear(year).forEach((date) => {
     const monthIndex = date.getMonth();
@@ -265,6 +292,7 @@ export function getAlmanacAuspiciousAnalysis({
   blockedWeddingDateSet,
   adjustedWorkdaySet,
   preferredTemperatureDateSet,
+  ignoreTemperature,
 }: AlmanacAuspiciousInput): AlmanacAuspiciousOutput {
   const zodiacConflictDateSet = new Set<string>();
   const zodiacCompatibleDateSet = new Set<string>();
@@ -300,7 +328,9 @@ export function getAlmanacAuspiciousAnalysis({
     const isPreferredTemp = preferredTemperatureDateSet.has(dateISO);
     const isBingWuYearFor2026 = year !== 2026 || lunar.getYearInGanZhi() === "丙午";
     const dayChongShengXiao = lunar.getDayChongShengXiao();
-    const hasDirectChong = dayChongShengXiao === groomZodiac || dayChongShengXiao === brideZodiac;
+    const hasDirectChong =
+      (isSpecificZodiac(groomZodiac) && dayChongShengXiao === groomZodiac) ||
+      (isSpecificZodiac(brideZodiac) && dayChongShengXiao === brideZodiac);
     const naYinCheck = evaluateNaYinCompatibility(dayElement, groomZodiac, brideZodiac);
     const hasZodiacConflict = hasDirectChong || !naYinCheck.compatible;
     const scoreNotes: string[] = [];
@@ -377,7 +407,9 @@ export function getAlmanacAuspiciousAnalysis({
       scoreNotes.push("四绝日 -28");
     }
 
-    if (isPreferredTemp) {
+    if (ignoreTemperature) {
+      scoreNotes.push("温度不设限制 ±0");
+    } else if (isPreferredTemp) {
       score += 4;
       scoreNotes.push("温度匹配 +4");
     } else {
@@ -425,7 +457,7 @@ export function getAlmanacAuspiciousAnalysis({
       includesMarryInYi &&
       excludesMarryInJi &&
       isBingWuYearFor2026 &&
-      isPreferredTemp &&
+      (ignoreTemperature || isPreferredTemp) &&
       !isHolidayOrFestival &&
       !hasDirectChong;
 
@@ -439,10 +471,6 @@ export function getAlmanacAuspiciousAnalysis({
       reasons.push("周末档期");
     } else if (isAdjustedWorkday) {
       reasons.push("调休工作日，周末便利性较低");
-    }
-
-    if (lunar.getDayTianShenLuck() === "吉") {
-      score += 4;
     }
 
     if (year === 2026) {

@@ -5,18 +5,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { YearCalendar } from "@/components/year-calendar";
 import { buildMonthGrids, getDatesForYear } from "@/lib/calendar";
 import { getHolidayContext } from "@/lib/holidays";
-import { getAlmanacAuspiciousAnalysis, getTemperaturePreferenceSets } from "@/lib/wedding-score";
+import { getAlmanacAuspiciousAnalysis, getTemperaturePreferenceSets, type ZodiacPreference } from "@/lib/wedding-score";
 import { fromZodiacShareKey, toZodiacShareKey, ZODIAC_OPTIONS } from "@/lib/zodiac";
 
 const CURRENT_YEAR = new Date().getFullYear();
+const ANY_ZODIAC_OPTION = "不介意/其他" as const;
+type ZodiacInputValue = (typeof ZODIAC_OPTIONS)[number] | typeof ANY_ZODIAC_OPTION;
+type TemperatureMode = "range" | "any";
 
 export default function Home() {
   const calendarExportRef = useRef<HTMLDivElement>(null);
   const [city, setCity] = useState("北京");
-  const [groomZodiac, setGroomZodiac] = useState<(typeof ZODIAC_OPTIONS)[number]>(ZODIAC_OPTIONS[0]);
-  const [brideZodiac, setBrideZodiac] = useState<(typeof ZODIAC_OPTIONS)[number]>(ZODIAC_OPTIONS[1]);
+  const [groomZodiac, setGroomZodiac] = useState<ZodiacInputValue>(ZODIAC_OPTIONS[0]);
+  const [brideZodiac, setBrideZodiac] = useState<ZodiacInputValue>(ZODIAC_OPTIONS[1]);
   const [minTemp, setMinTemp] = useState("16");
   const [maxTemp, setMaxTemp] = useState("24");
+  const [temperatureMode, setTemperatureMode] = useState<TemperatureMode>("range");
   const [yearInput, setYearInput] = useState<string>(String(CURRENT_YEAR));
   const [isDownloadingCalendar, setIsDownloadingCalendar] = useState(false);
   const [shareCopyStatus, setShareCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
@@ -29,6 +33,7 @@ export default function Home() {
     const yearFromQuery = queryParams.get("year");
     const minTempFromQuery = queryParams.get("tempMin");
     const maxTempFromQuery = queryParams.get("tempMax");
+    const tempModeFromQuery = queryParams.get("tempMode");
 
     if (cityFromQuery) {
       setCity(cityFromQuery);
@@ -46,17 +51,29 @@ export default function Home() {
       setMaxTemp(maxTempFromQuery);
     }
 
+    if (tempModeFromQuery === "any") {
+      setTemperatureMode("any");
+    }
+
     if (groomFromQuery) {
-      const groomAnimal = fromZodiacShareKey(groomFromQuery);
-      if (groomAnimal) {
-        setGroomZodiac(groomAnimal);
+      if (groomFromQuery === "any") {
+        setGroomZodiac(ANY_ZODIAC_OPTION);
+      } else {
+        const groomAnimal = fromZodiacShareKey(groomFromQuery);
+        if (groomAnimal) {
+          setGroomZodiac(groomAnimal);
+        }
       }
     }
 
     if (brideFromQuery) {
-      const brideAnimal = fromZodiacShareKey(brideFromQuery);
-      if (brideAnimal) {
-        setBrideZodiac(brideAnimal);
+      if (brideFromQuery === "any") {
+        setBrideZodiac(ANY_ZODIAC_OPTION);
+      } else {
+        const brideAnimal = fromZodiacShareKey(brideFromQuery);
+        if (brideAnimal) {
+          setBrideZodiac(brideAnimal);
+        }
       }
     }
   }, []);
@@ -87,6 +104,9 @@ export default function Home() {
 
     return safeMin <= safeMax ? [safeMin, safeMax] : [safeMax, safeMin];
   }, [maxTemp, minTemp]);
+  const ignoreTemperature = temperatureMode === "any";
+  const groomPreference: ZodiacPreference = groomZodiac === ANY_ZODIAC_OPTION ? "ANY" : groomZodiac;
+  const bridePreference: ZodiacPreference = brideZodiac === ANY_ZODIAC_OPTION ? "ANY" : brideZodiac;
 
   const holidayContext = useMemo(() => getHolidayContext(selectedYear), [selectedYear]);
   const holidayMap = holidayContext.holidayByDateISO;
@@ -98,8 +118,9 @@ export default function Home() {
         year: selectedYear,
         minTemp: normalizedMinTemp,
         maxTemp: normalizedMaxTemp,
+        ignoreTemperature,
       }),
-    [normalizedMaxTemp, normalizedMinTemp, selectedYear],
+    [ignoreTemperature, normalizedMaxTemp, normalizedMinTemp, selectedYear],
   );
   const {
     zodiacConflictDateSet,
@@ -113,13 +134,14 @@ export default function Home() {
     () =>
       getAlmanacAuspiciousAnalysis({
         year: selectedYear,
-        groomZodiac,
-        brideZodiac,
+        groomZodiac: groomPreference,
+        brideZodiac: bridePreference,
         blockedWeddingDateSet,
         adjustedWorkdaySet,
         preferredTemperatureDateSet,
+        ignoreTemperature,
       }),
-    [adjustedWorkdaySet, blockedWeddingDateSet, brideZodiac, groomZodiac, preferredTemperatureDateSet, selectedYear],
+    [adjustedWorkdaySet, blockedWeddingDateSet, bridePreference, groomPreference, ignoreTemperature, preferredTemperatureDateSet, selectedYear],
   );
 
   const months = useMemo(
@@ -182,11 +204,15 @@ export default function Home() {
       queryParams.set("city", normalizedCity);
     }
 
-    queryParams.set("groom", toZodiacShareKey(groomZodiac));
-    queryParams.set("bride", toZodiacShareKey(brideZodiac));
+    queryParams.set("groom", groomZodiac === ANY_ZODIAC_OPTION ? "any" : toZodiacShareKey(groomZodiac));
+    queryParams.set("bride", brideZodiac === ANY_ZODIAC_OPTION ? "any" : toZodiacShareKey(brideZodiac));
     queryParams.set("year", String(selectedYear));
-    queryParams.set("tempMin", String(normalizedMinTemp));
-    queryParams.set("tempMax", String(normalizedMaxTemp));
+    queryParams.set("tempMode", temperatureMode);
+
+    if (!ignoreTemperature) {
+      queryParams.set("tempMin", String(normalizedMinTemp));
+      queryParams.set("tempMax", String(normalizedMaxTemp));
+    }
 
     return `${window.location.origin}${window.location.pathname}?${queryParams.toString()}`;
   };
@@ -246,9 +272,10 @@ export default function Home() {
                 <span className="font-medium text-slate-700">新郎生肖</span>
                 <select
                   value={groomZodiac}
-                  onChange={(event) => setGroomZodiac(event.target.value as (typeof ZODIAC_OPTIONS)[number])}
+                  onChange={(event) => setGroomZodiac(event.target.value as ZodiacInputValue)}
                   className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-200 transition focus:ring-2"
                 >
+                  <option value={ANY_ZODIAC_OPTION}>{ANY_ZODIAC_OPTION}</option>
                   {ZODIAC_OPTIONS.map((zodiac) => (
                     <option key={`groom-${zodiac}`} value={zodiac}>
                       {zodiac}
@@ -261,9 +288,10 @@ export default function Home() {
                 <span className="font-medium text-slate-700">新娘生肖</span>
                 <select
                   value={brideZodiac}
-                  onChange={(event) => setBrideZodiac(event.target.value as (typeof ZODIAC_OPTIONS)[number])}
+                  onChange={(event) => setBrideZodiac(event.target.value as ZodiacInputValue)}
                   className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-200 transition focus:ring-2"
                 >
+                  <option value={ANY_ZODIAC_OPTION}>{ANY_ZODIAC_OPTION}</option>
                   {ZODIAC_OPTIONS.map((zodiac) => (
                     <option key={`bride-${zodiac}`} value={zodiac}>
                       {zodiac}
@@ -274,6 +302,17 @@ export default function Home() {
 
               <div className="text-sm">
                 <span className="font-medium text-slate-700">偏好温度范围（°C）</span>
+                <label className="mt-1.5 flex flex-col gap-1">
+                  <span className="text-xs text-slate-500">温度偏好模式</span>
+                  <select
+                    value={temperatureMode}
+                    onChange={(event) => setTemperatureMode(event.target.value as TemperatureMode)}
+                    className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-200 transition focus:ring-2"
+                  >
+                    <option value="range">按范围筛选</option>
+                    <option value="any">不介意/其他</option>
+                  </select>
+                </label>
                 <div className="mt-1.5 grid grid-cols-2 gap-2">
                   <label className="flex flex-col gap-1">
                     <span className="text-xs text-slate-500">最低</span>
@@ -282,6 +321,7 @@ export default function Home() {
                       value={minTemp}
                       onChange={(event) => setMinTemp(event.target.value)}
                       placeholder="最低"
+                      disabled={ignoreTemperature}
                       className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-200 transition focus:ring-2"
                     />
                   </label>
@@ -292,6 +332,7 @@ export default function Home() {
                       value={maxTemp}
                       onChange={(event) => setMaxTemp(event.target.value)}
                       placeholder="最高"
+                      disabled={ignoreTemperature}
                       className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-200 transition focus:ring-2"
                     />
                   </label>
@@ -317,7 +358,8 @@ export default function Home() {
                 {groomZodiac} &amp; {brideZodiac}
               </p>
               <p className="mt-1">
-                {selectedYear} 年共 {totalDates} 天 • 偏好 {normalizedMinTemp}°C ~ {normalizedMaxTemp}°C
+                {selectedYear} 年共 {totalDates} 天 •{" "}
+                {ignoreTemperature ? "温度：不介意/其他" : `偏好 ${normalizedMinTemp}°C ~ ${normalizedMaxTemp}°C`}
               </p>
               <p className="mt-1">
                 生肖冲突日期：<span className="font-semibold text-slate-700">{zodiacConflictDateSet.size}</span>
