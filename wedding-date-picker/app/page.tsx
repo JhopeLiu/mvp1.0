@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import html2canvas from "html2canvas";
+import { useMemo, useRef, useState } from "react";
 import { YearCalendar } from "@/components/year-calendar";
 import { buildMonthGrids, getDatesForYear } from "@/lib/calendar";
 import { getPublicHolidayMap } from "@/lib/holidays";
@@ -10,12 +11,14 @@ import { ZODIAC_OPTIONS } from "@/lib/zodiac";
 const CURRENT_YEAR = new Date().getFullYear();
 
 export default function Home() {
+  const calendarExportRef = useRef<HTMLDivElement>(null);
   const [city, setCity] = useState("Tokyo");
   const [groomZodiac, setGroomZodiac] = useState<(typeof ZODIAC_OPTIONS)[number]>(ZODIAC_OPTIONS[0]);
   const [brideZodiac, setBrideZodiac] = useState<(typeof ZODIAC_OPTIONS)[number]>(ZODIAC_OPTIONS[1]);
   const [minTemp, setMinTemp] = useState("16");
   const [maxTemp, setMaxTemp] = useState("24");
   const [yearInput, setYearInput] = useState<string>(String(CURRENT_YEAR));
+  const [isDownloadingCalendar, setIsDownloadingCalendar] = useState(false);
 
   const selectedYear = useMemo(() => {
     const parsed = Number(yearInput);
@@ -85,6 +88,28 @@ export default function Home() {
     ],
   );
   const totalDates = useMemo(() => getDatesForYear(selectedYear).length, [selectedYear]);
+
+  const handleDownloadCalendar = async () => {
+    if (!calendarExportRef.current || isDownloadingCalendar) {
+      return;
+    }
+
+    try {
+      setIsDownloadingCalendar(true);
+      const canvas = await html2canvas(calendarExportRef.current, {
+        backgroundColor: "#ffffff",
+        scale: 2,
+      });
+      const imageUrl = canvas.toDataURL("image/png");
+      const downloadLink = document.createElement("a");
+
+      downloadLink.href = imageUrl;
+      downloadLink.download = `wedding-lucky-dates-${selectedYear}.png`;
+      downloadLink.click();
+    } finally {
+      setIsDownloadingCalendar(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
@@ -209,11 +234,27 @@ export default function Home() {
           <section className="rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm backdrop-blur">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Calendar view</h3>
-              <p className="text-xs text-slate-500">
-                Updates instantly when city, zodiac, year, or temperature inputs change.
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="text-xs text-slate-500">
+                  Updates instantly when city, zodiac, year, or temperature inputs change.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleDownloadCalendar}
+                  disabled={isDownloadingCalendar}
+                  className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isDownloadingCalendar ? "Preparing PNG..." : "Download Wedding Calendar"}
+                </button>
+              </div>
             </div>
-            <YearCalendar year={selectedYear} months={months} />
+            <div ref={calendarExportRef} className="rounded-xl bg-white p-4">
+              <h2 className="text-center text-2xl font-bold text-slate-900">Wedding Lucky Dates</h2>
+              <p className="mt-1 text-center text-sm text-slate-600">{selectedYear} Calendar</p>
+              <div className="mt-4">
+                <YearCalendar year={selectedYear} months={months} />
+              </div>
+            </div>
           </section>
         </div>
       </div>
