@@ -53,7 +53,7 @@ export function buildMonthGrids(year: number, options: BuildMonthGridsOptions = 
     const firstDay = new Date(year, monthIndex, 1);
 
     return {
-      monthName: firstDay.toLocaleDateString("en-US", { month: "long" }),
+      monthName: firstDay.toLocaleDateString("zh-CN", { month: "long" }),
       leadingBlankDays: firstDay.getDay(),
       days: monthDates.map((date) => {
         const dayOfWeek = date.getDay();

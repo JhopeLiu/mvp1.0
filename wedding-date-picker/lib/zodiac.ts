@@ -1,20 +1,20 @@
 export const ZODIAC_OPTIONS = [
-  "Aries",
-  "Taurus",
-  "Gemini",
-  "Cancer",
-  "Leo",
-  "Virgo",
-  "Libra",
-  "Scorpio",
-  "Sagittarius",
-  "Capricorn",
-  "Aquarius",
-  "Pisces",
+  "鼠",
+  "牛",
+  "虎",
+  "兔",
+  "龙",
+  "蛇",
+  "马",
+  "羊",
+  "猴",
+  "鸡",
+  "狗",
+  "猪",
 ] as const;
 
-export type ZodiacSign = (typeof ZODIAC_OPTIONS)[number];
+export type ZodiacAnimal = (typeof ZODIAC_OPTIONS)[number];
 
-export function getZodiacSignIndex(sign: ZodiacSign): number {
-  return ZODIAC_OPTIONS.indexOf(sign);
+export function getZodiacAnimalIndex(animal: ZodiacAnimal): number {
+  return ZODIAC_OPTIONS.indexOf(animal);
 }

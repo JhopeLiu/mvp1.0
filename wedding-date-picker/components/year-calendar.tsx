@@ -5,33 +5,33 @@ type YearCalendarProps = {
   months: MonthGrid[];
 };
 
-const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const WEEKDAY_LABELS = ["日", "一", "二", "三", "四", "五", "六"];
 
 export function YearCalendar({ year, months }: YearCalendarProps) {
   return (
     <section>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-xl font-semibold text-slate-900">{year} Calendar</h2>
+        <h2 className="text-xl font-semibold text-slate-900">{year} 年日历</h2>
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
             <span className="h-2 w-2 rounded-full bg-rose-400" />
-            Weekend
+            周末
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
             <span className="h-2 w-2 rounded-full bg-slate-400" />
-            Zodiac conflict
+            生肖冲突
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
             <span className="h-2 w-2 rounded-full bg-slate-300" />
-            Temp out of range
+            温度不匹配
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
             <span className="h-2 w-2 rounded-full bg-indigo-400" />
-            Zodiac compatible
+            生肖匹配
           </span>
           <span className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-slate-600">
             <span className="text-pink-500">♥</span>
-            Recommended
+            推荐日期
           </span>
         </div>
       </div>
@@ -71,12 +71,12 @@ export function YearCalendar({ year, months }: YearCalendarProps) {
                   }`}
                   title={
                     day.hasZodiacConflict
-                      ? `${day.dateISO} • Zodiac conflict`
+                      ? `${day.dateISO} • 生肖冲突`
                       : day.isOutsidePreferredTempRange
-                        ? `${day.dateISO} • Outside preferred temperature range`
+                        ? `${day.dateISO} • 超出偏好温度范围`
                       : day.isRecommendedDate
-                        ? `${day.dateISO} • Recommended date`
-                        : `${day.dateISO} • Zodiac compatible`
+                        ? `${day.dateISO} • 推荐日期`
+                        : `${day.dateISO} • 生肖匹配`
                   }
                 >
                   {day.dayNumber}

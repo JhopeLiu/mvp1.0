@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   return NextResponse.json({
-    message: "Wedding date picker API is ready.",
+    message: "婚礼择日 API 已就绪。",
     endpoints: ["/api/wedding-dates"],
   });
 }

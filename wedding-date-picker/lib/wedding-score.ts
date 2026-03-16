@@ -1,5 +1,5 @@
 import { getDatesForYear, toISODateString } from "@/lib/calendar";
-import { getZodiacSignIndex, type ZodiacSign } from "@/lib/zodiac";
+import { getZodiacAnimalIndex, type ZodiacAnimal } from "@/lib/zodiac";
 
 const LUCKY_DAY_NUMBERS = new Set([6, 8, 9, 16, 18, 20, 22, 28]);
 
@@ -33,8 +33,8 @@ type PotentialDateInput = {
 
 type ZodiacCompatibilityInput = {
   year: number;
-  groomZodiac: ZodiacSign;
-  brideZodiac: ZodiacSign;
+  groomZodiac: ZodiacAnimal;
+  brideZodiac: ZodiacAnimal;
 };
 
 type ZodiacCompatibilityOutput = {
@@ -100,8 +100,8 @@ export function getZodiacCompatibilitySets({
   groomZodiac,
   brideZodiac,
 }: ZodiacCompatibilityInput): ZodiacCompatibilityOutput {
-  const groomIndex = getZodiacSignIndex(groomZodiac);
-  const brideIndex = getZodiacSignIndex(brideZodiac);
+  const groomIndex = getZodiacAnimalIndex(groomZodiac);
+  const brideIndex = getZodiacAnimalIndex(brideZodiac);
   const conflictIndexes = new Set<number>([
     groomIndex,
     brideIndex,

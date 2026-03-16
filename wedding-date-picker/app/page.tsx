@@ -12,7 +12,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 
 export default function Home() {
   const calendarExportRef = useRef<HTMLDivElement>(null);
-  const [city, setCity] = useState("Tokyo");
+  const [city, setCity] = useState("北京");
   const [groomZodiac, setGroomZodiac] = useState<(typeof ZODIAC_OPTIONS)[number]>(ZODIAC_OPTIONS[0]);
   const [brideZodiac, setBrideZodiac] = useState<(typeof ZODIAC_OPTIONS)[number]>(ZODIAC_OPTIONS[1]);
   const [minTemp, setMinTemp] = useState("16");
@@ -104,7 +104,7 @@ export default function Home() {
       const downloadLink = document.createElement("a");
 
       downloadLink.href = imageUrl;
-      downloadLink.download = `wedding-lucky-dates-${selectedYear}.png`;
+      downloadLink.download = `婚礼吉日-${selectedYear}.png`;
       downloadLink.click();
     } finally {
       setIsDownloadingCalendar(false);
@@ -115,34 +115,34 @@ export default function Home() {
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
       <div className="mx-auto max-w-[1700px] p-4 md:p-6 xl:p-8">
         <header className="mb-5 rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm backdrop-blur">
-          <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">Wedding Date Picker</h1>
+          <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">婚礼择日助手</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Enter preferences on the left and explore suggested dates in the yearly calendar on the right.
+            左侧填写偏好条件，右侧会实时展示全年日历与推荐日期。
           </p>
         </header>
 
         <div className="grid gap-5 md:grid-cols-[350px,1fr]">
           <aside className="h-fit rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur md:sticky md:top-6">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-slate-900">Wedding Preferences</h2>
+              <h2 className="text-lg font-semibold text-slate-900">择日偏好</h2>
               <span className="rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
-                Auto refresh
+                自动刷新
               </span>
             </div>
             <form className="mt-4 space-y-4">
               <label className="flex flex-col gap-1.5 text-sm">
-                <span className="font-medium text-slate-700">City</span>
+                <span className="font-medium text-slate-700">城市</span>
                 <input
                   type="text"
                   value={city}
                   onChange={(event) => setCity(event.target.value)}
-                  placeholder="e.g. Tokyo"
+                  placeholder="例如：北京"
                   className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-200 transition focus:ring-2"
                 />
               </label>
 
               <label className="flex flex-col gap-1.5 text-sm">
-                <span className="font-medium text-slate-700">Groom zodiac</span>
+                <span className="font-medium text-slate-700">新郎生肖</span>
                 <select
                   value={groomZodiac}
                   onChange={(event) => setGroomZodiac(event.target.value as (typeof ZODIAC_OPTIONS)[number])}
@@ -157,7 +157,7 @@ export default function Home() {
               </label>
 
               <label className="flex flex-col gap-1.5 text-sm">
-                <span className="font-medium text-slate-700">Bride zodiac</span>
+                <span className="font-medium text-slate-700">新娘生肖</span>
                 <select
                   value={brideZodiac}
                   onChange={(event) => setBrideZodiac(event.target.value as (typeof ZODIAC_OPTIONS)[number])}
@@ -172,25 +172,25 @@ export default function Home() {
               </label>
 
               <div className="text-sm">
-                <span className="font-medium text-slate-700">Preferred temperature range (°C)</span>
+                <span className="font-medium text-slate-700">偏好温度范围（°C）</span>
                 <div className="mt-1.5 grid grid-cols-2 gap-2">
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs text-slate-500">Min</span>
+                    <span className="text-xs text-slate-500">最低</span>
                     <input
                       type="number"
                       value={minTemp}
                       onChange={(event) => setMinTemp(event.target.value)}
-                      placeholder="Min"
+                      placeholder="最低"
                       className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-200 transition focus:ring-2"
                     />
                   </label>
                   <label className="flex flex-col gap-1">
-                    <span className="text-xs text-slate-500">Max</span>
+                    <span className="text-xs text-slate-500">最高</span>
                     <input
                       type="number"
                       value={maxTemp}
                       onChange={(event) => setMaxTemp(event.target.value)}
-                      placeholder="Max"
+                      placeholder="最高"
                       className="rounded-lg border border-slate-300 px-3 py-2 outline-none ring-indigo-200 transition focus:ring-2"
                     />
                   </label>
@@ -198,7 +198,7 @@ export default function Home() {
               </div>
 
               <label className="flex flex-col gap-1.5 text-sm">
-                <span className="font-medium text-slate-700">Wedding year</span>
+                <span className="font-medium text-slate-700">婚礼年份</span>
                 <input
                   type="number"
                   min={1900}
@@ -212,31 +212,31 @@ export default function Home() {
 
             <div className="mt-5 rounded-xl bg-slate-50 p-3 text-xs text-slate-600">
               <p>
-                <span className="font-semibold text-slate-700">Summary:</span> {city || "Unknown city"} •{" "}
+                <span className="font-semibold text-slate-700">摘要：</span> {city || "未填写城市"} •{" "}
                 {groomZodiac} &amp; {brideZodiac}
               </p>
               <p className="mt-1">
-                {totalDates} dates in {selectedYear} • preferred {normalizedMinTemp}°C to {normalizedMaxTemp}°C
+                {selectedYear} 年共 {totalDates} 天 • 偏好 {normalizedMinTemp}°C ~ {normalizedMaxTemp}°C
               </p>
               <p className="mt-1">
-                Zodiac conflicts: <span className="font-semibold text-slate-700">{zodiacConflictDateSet.size}</span>
+                生肖冲突日期：<span className="font-semibold text-slate-700">{zodiacConflictDateSet.size}</span>
               </p>
               <p className="mt-1">
-                Outside temp range:{" "}
+                温度不匹配日期：
                 <span className="font-semibold text-slate-700">{outOfPreferredTemperatureDateSet.size}</span>
               </p>
               <p className="mt-1">
-                Recommended dates: <span className="font-semibold text-pink-700">{recommendedDateSet.size}</span>
+                推荐日期：<span className="font-semibold text-pink-700">{recommendedDateSet.size}</span>
               </p>
             </div>
           </aside>
 
           <section className="rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm backdrop-blur">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Calendar view</h3>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">日历视图</h3>
               <div className="flex items-center gap-3">
                 <p className="text-xs text-slate-500">
-                  Updates instantly when city, zodiac, year, or temperature inputs change.
+                  城市、生肖、年份或温度范围变更后会自动刷新。
                 </p>
                 <button
                   type="button"
@@ -244,13 +244,13 @@ export default function Home() {
                   disabled={isDownloadingCalendar}
                   className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isDownloadingCalendar ? "Preparing PNG..." : "Download Wedding Calendar"}
+                  {isDownloadingCalendar ? "正在生成 PNG..." : "下载婚礼日历"}
                 </button>
               </div>
             </div>
             <div ref={calendarExportRef} className="rounded-xl bg-white p-4">
-              <h2 className="text-center text-2xl font-bold text-slate-900">Wedding Lucky Dates</h2>
-              <p className="mt-1 text-center text-sm text-slate-600">{selectedYear} Calendar</p>
+              <h2 className="text-center text-2xl font-bold text-slate-900">婚礼吉日</h2>
+              <p className="mt-1 text-center text-sm text-slate-600">{selectedYear} 年日历</p>
               <div className="mt-4">
                 <YearCalendar year={selectedYear} months={months} />
               </div>
