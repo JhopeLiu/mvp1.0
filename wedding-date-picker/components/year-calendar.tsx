@@ -10,7 +10,6 @@ type YearCalendarProps = {
 
 export function YearCalendar({ year, months, recommendationMode }: YearCalendarProps) {
   const [selectedDay, setSelectedDay] = useState<MonthGrid["days"][number] | null>(null);
-  const weekdayHeader = ["日", "一", "二", "三", "四", "五", "六"];
 
   return (
     <section>
@@ -35,27 +34,19 @@ export function YearCalendar({ year, months, recommendationMode }: YearCalendarP
         </div>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-4 space-y-2 rounded-xl border border-slate-200 bg-white/70 p-3">
         {months.map((month) => (
-          <article key={month.monthName} className="rounded-xl border border-slate-200 bg-white/90 p-2">
-            <div className="mb-2 flex items-center justify-between rounded-md bg-red-700 px-2 py-1">
-              <span className="text-sm font-bold text-white">{month.monthName.replace("月", "")}月</span>
-              <span className="text-[10px] text-red-100">全年总览</span>
+          <article key={month.monthName} className="flex items-stretch gap-2 rounded-lg bg-white/80 p-2">
+            <div className="flex w-14 flex-shrink-0 items-center justify-center rounded-md bg-red-700 text-sm font-bold text-white">
+              {month.monthName.replace("月", "")}月
             </div>
 
-            <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-500">
-              {weekdayHeader.map((weekday) => (
-                <span key={`${month.monthName}-${weekday}`} className="rounded bg-slate-50 py-0.5">
-                  {weekday}
-                </span>
-              ))}
-            </div>
-
-            <div className="mt-1 grid grid-cols-7 gap-1">
-              {Array.from({ length: month.leadingBlankDays }).map((_, index) => (
-                <div key={`${month.monthName}-blank-${index}`} className="h-[52px] rounded bg-transparent" />
-              ))}
-              {month.days.map((day) => {
+            <div className="grid flex-1 grid-cols-[repeat(31,minmax(0,1fr))] gap-1">
+              {Array.from({ length: 31 }, (_, dayOffset) => {
+                const day = month.days[dayOffset];
+                if (!day) {
+                  return <div key={`${month.monthName}-blank-${dayOffset + 1}`} className="h-[52px] rounded bg-transparent" />;
+                }
                 const isRestDay = day.isHoliday || (day.isWeekend && !day.isAdjustedWorkday);
                 const isDimmed = day.hasZodiacConflict || day.isOutsidePreferredTempRange;
                 const showStrictMarriageTabooMarker = recommendationMode === "strict" && day.hasMarriageTaboo;
@@ -79,7 +70,9 @@ export function YearCalendar({ year, months, recommendationMode }: YearCalendarP
                         忌
                       </span>
                     )}
-                    {day.isRecommendedDate && <span className="absolute -right-1 -top-1 text-base leading-none text-pink-500">♥</span>}
+                    {day.isRecommendedDate && (
+                      <span className="absolute -right-1 -top-1 text-base leading-none text-pink-500">♥</span>
+                    )}
                   </button>
                 );
               })}
