@@ -61,6 +61,9 @@ type AlmanacAuspiciousOutput = {
   rankedAuspiciousDates: RankedAuspiciousDate[];
   dateScoreByISO: Record<string, number>;
   dateScoreDetailByISO: Record<string, string>;
+  dateScoreReasonByISO: Record<string, string>;
+  dateNoticeByISO: Record<string, string>;
+  marriageTabooByISO: Record<string, boolean>;
   lunarDayTextByISO: Record<string, string>;
   leapMonth: number;
 };
@@ -331,6 +334,9 @@ export function getAlmanacAuspiciousAnalysis({
   const rankedAuspiciousDates: RankedAuspiciousDate[] = [];
   const dateScoreByISO: Record<string, number> = {};
   const dateScoreDetailByISO: Record<string, string> = {};
+  const dateScoreReasonByISO: Record<string, string> = {};
+  const dateNoticeByISO: Record<string, string> = {};
+  const marriageTabooByISO: Record<string, boolean> = {};
   const lunarDayTextByISO: Record<string, string> = {};
   const siLiDateSet = getSiLiDateSet(year);
   const siJueDateSet = getSiJueDateSet(year);
@@ -348,6 +354,7 @@ export function getAlmanacAuspiciousAnalysis({
     const isHuangDao = lunar.getDayTianShenType() === "黄道";
     const includesMarryInYi = dayYi.includes("嫁娶");
     const excludesMarryInJi = !dayJi.includes("嫁娶");
+    const hasMarriageTaboo = dayJi.includes("嫁娶");
     const lunarMonthRaw = lunar.getMonth();
     const lunarMonth = Math.abs(lunarMonthRaw);
     const lunarDay = lunar.getDay();
@@ -377,6 +384,7 @@ export function getAlmanacAuspiciousAnalysis({
     const remedyNotes: string[] = [];
     let score = 60;
     lunarDayTextByISO[dateISO] = lunar.getDayInChinese();
+    marriageTabooByISO[dateISO] = hasMarriageTaboo;
 
     if (hasZodiacConflict) {
       zodiacConflictDateSet.add(dateISO);
@@ -511,6 +519,13 @@ export function getAlmanacAuspiciousAnalysis({
 
     score = Math.max(0, Math.min(100, score));
     dateScoreByISO[dateISO] = score;
+    dateScoreReasonByISO[dateISO] = scoreNotes.join("；");
+    dateNoticeByISO[dateISO] =
+      impactNotes.length > 0 || remedyNotes.length > 0
+        ? [impactNotes.length > 0 ? `影响：${impactNotes.join("；")}` : "", remedyNotes.length > 0 ? `化解建议：${remedyNotes.join("；")}` : ""]
+            .filter(Boolean)
+            .join("；")
+        : "整体风险较低，可按常规流程准备。";
     dateScoreDetailByISO[dateISO] = [
       scoreNotes.join("；"),
       impactNotes.length > 0 ? `影响：${impactNotes.join("；")}` : "",
@@ -603,6 +618,9 @@ export function getAlmanacAuspiciousAnalysis({
     rankedAuspiciousDates,
     dateScoreByISO,
     dateScoreDetailByISO,
+    dateScoreReasonByISO,
+    dateNoticeByISO,
+    marriageTabooByISO,
     lunarDayTextByISO,
     leapMonth,
   };

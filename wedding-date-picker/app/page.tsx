@@ -140,6 +140,9 @@ export default function Home() {
     rankedAuspiciousDates,
     dateScoreByISO,
     dateScoreDetailByISO,
+    dateScoreReasonByISO,
+    dateNoticeByISO,
+    marriageTabooByISO,
     lunarDayTextByISO,
     leapMonth,
   } = useMemo(
@@ -179,11 +182,17 @@ export default function Home() {
         recommendedDateSet,
         dateScoreByISO,
         dateScoreDetailByISO,
+        dateScoreReasonByISO,
+        dateNoticeByISO,
+        marriageTabooByISO,
         lunarDayTextByISO,
       }),
     [
       dateScoreByISO,
       dateScoreDetailByISO,
+      dateScoreReasonByISO,
+      dateNoticeByISO,
+      marriageTabooByISO,
       holidayMap,
       lunarDayTextByISO,
       outOfPreferredTemperatureDateSet,
@@ -507,7 +516,7 @@ export default function Home() {
               <h2 className="text-center text-2xl font-bold text-slate-900">婚礼吉日</h2>
               <p className="mt-1 text-center text-sm text-slate-600">{selectedYear} 年日历</p>
               <div className="mt-4">
-                <YearCalendar year={selectedYear} months={months} />
+                <YearCalendar year={selectedYear} months={months} recommendationMode={recommendationMode} />
               </div>
             </div>
           </section>

@@ -11,7 +11,10 @@ export type CalendarDay = {
   isZodiacCompatible: boolean;
   isOutsidePreferredTempRange: boolean;
   isRecommendedDate: boolean;
+  hasMarriageTaboo: boolean;
   score: number;
+  scoreReason: string;
+  noticeText: string;
   scoreDetail: string;
 };
 
@@ -30,6 +33,9 @@ type BuildMonthGridsOptions = {
   recommendedDateSet?: Set<string>;
   dateScoreByISO?: Record<string, number>;
   dateScoreDetailByISO?: Record<string, string>;
+  dateScoreReasonByISO?: Record<string, string>;
+  dateNoticeByISO?: Record<string, string>;
+  marriageTabooByISO?: Record<string, boolean>;
   lunarDayTextByISO?: Record<string, string>;
 };
 
@@ -59,6 +65,9 @@ export function buildMonthGrids(year: number, options: BuildMonthGridsOptions = 
   const recommendedDateSet = options.recommendedDateSet ?? new Set<string>();
   const dateScoreByISO = options.dateScoreByISO ?? {};
   const dateScoreDetailByISO = options.dateScoreDetailByISO ?? {};
+  const dateScoreReasonByISO = options.dateScoreReasonByISO ?? {};
+  const dateNoticeByISO = options.dateNoticeByISO ?? {};
+  const marriageTabooByISO = options.marriageTabooByISO ?? {};
   const lunarDayTextByISO = options.lunarDayTextByISO ?? {};
   const weekdayLabels = ["日", "一", "二", "三", "四", "五", "六"];
 
@@ -87,7 +96,10 @@ export function buildMonthGrids(year: number, options: BuildMonthGridsOptions = 
           isZodiacCompatible: zodiacCompatibleDateSet.has(dateISO),
           isOutsidePreferredTempRange: outOfPreferredTemperatureDateSet.has(dateISO),
           isRecommendedDate: recommendedDateSet.has(dateISO),
+          hasMarriageTaboo: marriageTabooByISO[dateISO] ?? false,
           score: dateScoreByISO[dateISO] ?? 0,
+          scoreReason: dateScoreReasonByISO[dateISO] ?? "暂无得分理由",
+          noticeText: dateNoticeByISO[dateISO] ?? "暂无注意事项",
           scoreDetail: dateScoreDetailByISO[dateISO] ?? "暂无评分说明",
         };
       }),
