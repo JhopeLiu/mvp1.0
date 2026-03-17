@@ -204,10 +204,6 @@ export default function Home() {
     ],
   );
   const totalDates = useMemo(() => getDatesForYear(selectedYear).length, [selectedYear]);
-  const septemberQualifiedDates = useMemo(
-    () => rankedAuspiciousDates.filter((item) => item.dateISO.startsWith(`${selectedYear}-09-`)),
-    [rankedAuspiciousDates, selectedYear],
-  );
 
   const handleDownloadCalendar = async () => {
     if (!calendarExportRef.current || isDownloadingCalendar) {
@@ -276,7 +272,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-100 via-slate-50 to-white">
-      <div className="mx-auto max-w-[1700px] p-4 md:p-6 xl:p-8">
+      <div className="mx-auto w-full max-w-[1600px] px-4 py-4 md:px-7 md:py-6 xl:px-9 xl:py-8">
         <header className="mb-5 rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm backdrop-blur">
           <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">婚礼择日助手</h1>
           <p className="mt-2 text-sm text-slate-600">
@@ -284,7 +280,7 @@ export default function Home() {
           </p>
         </header>
 
-        <div className="grid gap-5 md:grid-cols-[350px,1fr]">
+        <div className="grid items-start gap-6 lg:grid-cols-[340px,minmax(0,1fr)]">
           <aside className="h-fit rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-sm backdrop-blur md:sticky md:top-6">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-slate-900">择日偏好</h2>
@@ -461,28 +457,9 @@ export default function Home() {
               </ul>
             </div>
 
-            <div className="mt-3 rounded-xl border border-slate-200 bg-white p-3">
-              <h3 className="text-sm font-semibold text-slate-800">9 月吉日核验（含可化解项）</h3>
-              <ul className="mt-2 max-h-40 space-y-2 overflow-y-auto pr-1 text-xs text-slate-700">
-                {septemberQualifiedDates.map((item) => (
-                  <li key={`sep-${item.dateISO}`} className="rounded-lg bg-slate-50 p-2">
-                    <p className="font-semibold text-slate-900">
-                      {item.dateISO}（{item.lunarText}）· {item.score}分
-                    </p>
-                    <p className="mt-1 text-slate-600">{item.reason}</p>
-                    <p className="mt-1 text-slate-500">{dateScoreDetailByISO[item.dateISO]}</p>
-                  </li>
-                ))}
-                {septemberQualifiedDates.length === 0 && (
-                  <li className="rounded-lg bg-slate-50 p-2 text-slate-500">
-                    当前筛选条件下，9 月暂无达到推荐阈值的日期。
-                  </li>
-                )}
-              </ul>
-            </div>
           </aside>
 
-          <section className="rounded-2xl border border-slate-200 bg-white/80 p-5 shadow-sm backdrop-blur">
+          <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white/80 p-4 shadow-sm backdrop-blur md:p-5">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-4">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">日历视图</h3>
               <div className="flex items-center gap-3">

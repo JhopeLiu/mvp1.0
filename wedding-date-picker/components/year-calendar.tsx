@@ -34,7 +34,7 @@ export function YearCalendar({ year, months, recommendationMode }: YearCalendarP
         </div>
       </div>
 
-      <div className="mt-4 space-y-2 overflow-x-auto rounded-xl border border-slate-200 bg-white/70 p-3">
+      <div className="mt-4 space-y-2 overflow-x-auto rounded-xl border border-slate-200 bg-white/70 p-3 pr-5">
         {months.map((month) => (
           <article key={month.monthName} className="flex min-w-max items-stretch gap-2 rounded-lg bg-white/80 p-2">
             <div className="flex w-16 flex-shrink-0 items-center justify-center rounded-md bg-red-700 text-sm font-bold text-white">
