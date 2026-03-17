@@ -2,6 +2,7 @@
 
 import html2canvas from "html2canvas";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ChatAssistant } from "@/components/chat-assistant";
 import { YearCalendar } from "@/components/year-calendar";
 import { buildMonthGrids, getDatesForYear } from "@/lib/calendar";
 import { getHolidayContext } from "@/lib/holidays";
@@ -163,6 +164,29 @@ export default function Home() {
       blockedWeddingDateSet,
       bridePreference,
       groomPreference,
+      holidayMap,
+      ignoreTemperature,
+      preferredTemperatureDateSet,
+      recommendationMode,
+      selectedYear,
+    ],
+  );
+  const relaxedZodiacAnalysis = useMemo(
+    () =>
+      getAlmanacAuspiciousAnalysis({
+        year: selectedYear,
+        groomZodiac: "ANY",
+        brideZodiac: "ANY",
+        holidayByDateISO: holidayMap,
+        blockedWeddingDateSet,
+        adjustedWorkdaySet,
+        preferredTemperatureDateSet,
+        ignoreTemperature,
+        recommendationMode,
+      }),
+    [
+      adjustedWorkdaySet,
+      blockedWeddingDateSet,
       holidayMap,
       ignoreTemperature,
       preferredTemperatureDateSet,
@@ -499,6 +523,16 @@ export default function Home() {
           </section>
         </div>
       </div>
+      <ChatAssistant
+        city={city}
+        year={selectedYear}
+        recommendationMode={recommendationMode}
+        rankedAuspiciousDates={rankedAuspiciousDates}
+        dateScoreDetailByISO={dateScoreDetailByISO}
+        dateNoticeByISO={dateNoticeByISO}
+        relaxedZodiacTopDates={relaxedZodiacAnalysis.rankedAuspiciousDates}
+        relaxedZodiacCount={relaxedZodiacAnalysis.rankedAuspiciousDates.length}
+      />
     </main>
   );
 }
