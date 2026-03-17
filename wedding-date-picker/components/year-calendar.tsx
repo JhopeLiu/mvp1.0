@@ -36,8 +36,8 @@ export function YearCalendar({ year, months, recommendationMode }: YearCalendarP
 
       <div className="mt-4 space-y-2 rounded-xl border border-slate-200 bg-white/70 p-3">
         {months.map((month) => (
-          <article key={month.monthName} className="flex items-stretch gap-2 rounded-lg bg-white/80 p-2">
-            <div className="flex w-14 flex-shrink-0 items-center justify-center rounded-md bg-red-700 text-sm font-bold text-white">
+          <article key={month.monthName} className="flex items-stretch gap-2 rounded-lg border border-slate-100 bg-white/90 p-2">
+            <div className="flex w-16 flex-shrink-0 items-center justify-center rounded-md bg-red-700 text-base font-bold text-white">
               {month.monthName.replace("月", "")}月
             </div>
 
@@ -45,7 +45,7 @@ export function YearCalendar({ year, months, recommendationMode }: YearCalendarP
               {Array.from({ length: 31 }, (_, dayOffset) => {
                 const day = month.days[dayOffset];
                 if (!day) {
-                  return <div key={`${month.monthName}-blank-${dayOffset + 1}`} className="h-[52px] rounded bg-transparent" />;
+                  return <div key={`${month.monthName}-blank-${dayOffset + 1}`} className="h-14 rounded bg-transparent" />;
                 }
                 const isRestDay = day.isHoliday || (day.isWeekend && !day.isAdjustedWorkday);
                 const isDimmed = day.hasZodiacConflict || day.isOutsidePreferredTempRange;
@@ -56,22 +56,24 @@ export function YearCalendar({ year, months, recommendationMode }: YearCalendarP
                     type="button"
                     key={day.dateISO}
                     onClick={() => setSelectedDay(day)}
-                    className={`relative flex h-[52px] min-w-0 flex-col items-center justify-between rounded-sm border px-0.5 py-0.5 text-[10px] ${
+                    className={`relative flex h-14 min-w-0 flex-col items-center justify-between rounded-sm border px-0.5 py-1 text-[10px] ${
                       isRestDay
                         ? "border-red-300 bg-red-50 text-red-700"
                         : "border-slate-200 bg-slate-100 text-slate-700"
-                    } ${isDimmed ? "opacity-40" : ""} transition hover:scale-[1.03] focus:outline-none focus:ring-2 focus:ring-slate-400`}
+                    } ${isDimmed ? "opacity-40" : ""} transition hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-slate-400`}
                   >
                     <span className="leading-none text-[9px]">{day.weekdayLabel}</span>
-                    <span className="text-sm font-semibold leading-none">{String(day.dayNumber).padStart(2, "0")}</span>
+                    <span className="text-[15px] font-semibold leading-none">{String(day.dayNumber).padStart(2, "0")}</span>
                     <span className="leading-none text-[8px]">{day.lunarDayText}</span>
                     {showStrictMarriageTabooMarker && (
-                      <span className="absolute left-0.5 top-0.5 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-black text-[8px] font-semibold text-white">
+                      <span className="absolute left-0.5 top-0.5 inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-100 bg-black text-[8px] font-semibold text-white shadow-sm">
                         忌
                       </span>
                     )}
                     {day.isRecommendedDate && (
-                      <span className="absolute -right-1 -top-1 text-base leading-none text-pink-500">♥</span>
+                      <span className="absolute -right-1 -top-1 text-lg leading-none text-pink-500 drop-shadow-[0_1px_1px_rgba(0,0,0,0.2)]">
+                        ♥
+                      </span>
                     )}
                   </button>
                 );
