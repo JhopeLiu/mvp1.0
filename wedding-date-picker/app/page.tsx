@@ -194,6 +194,54 @@ export default function Home() {
       selectedYear,
     ],
   );
+  const strictModeAnalysis = useMemo(
+    () =>
+      getAlmanacAuspiciousAnalysis({
+        year: selectedYear,
+        groomZodiac: groomPreference,
+        brideZodiac: bridePreference,
+        holidayByDateISO: holidayMap,
+        blockedWeddingDateSet,
+        adjustedWorkdaySet,
+        preferredTemperatureDateSet,
+        ignoreTemperature,
+        recommendationMode: "strict",
+      }),
+    [
+      adjustedWorkdaySet,
+      blockedWeddingDateSet,
+      bridePreference,
+      groomPreference,
+      holidayMap,
+      ignoreTemperature,
+      preferredTemperatureDateSet,
+      selectedYear,
+    ],
+  );
+  const lenientModeAnalysis = useMemo(
+    () =>
+      getAlmanacAuspiciousAnalysis({
+        year: selectedYear,
+        groomZodiac: groomPreference,
+        brideZodiac: bridePreference,
+        holidayByDateISO: holidayMap,
+        blockedWeddingDateSet,
+        adjustedWorkdaySet,
+        preferredTemperatureDateSet,
+        ignoreTemperature,
+        recommendationMode: "lenient",
+      }),
+    [
+      adjustedWorkdaySet,
+      blockedWeddingDateSet,
+      bridePreference,
+      groomPreference,
+      holidayMap,
+      ignoreTemperature,
+      preferredTemperatureDateSet,
+      selectedYear,
+    ],
+  );
 
   const months = useMemo(
     () =>
@@ -236,9 +284,17 @@ export default function Home() {
 
     try {
       setIsDownloadingCalendar(true);
+      await new Promise<void>((resolve) => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
       const canvas = await html2canvas(calendarExportRef.current, {
         backgroundColor: "#ffffff",
         scale: 2,
+        useCORS: true,
+        ignoreElements: (element) => {
+          if (element instanceof HTMLElement) {
+            return element.dataset.exportIgnore === "true";
+          }
+          return false;
+        },
       });
       const imageUrl = canvas.toDataURL("image/png");
       const downloadLink = document.createElement("a");
@@ -516,6 +572,32 @@ export default function Home() {
             <div ref={calendarExportRef} className="rounded-xl bg-white p-4">
               <h2 className="text-center text-2xl font-bold text-slate-900">婚礼吉日</h2>
               <p className="mt-1 text-center text-sm text-slate-600">{selectedYear} 年日历</p>
+              <div className="mt-4 grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 sm:grid-cols-2 lg:grid-cols-3">
+                <p>
+                  <span className="font-semibold">城市：</span>
+                  {city || "未填写"}
+                </p>
+                <p>
+                  <span className="font-semibold">新人生肖：</span>
+                  {groomZodiac} / {brideZodiac}
+                </p>
+                <p>
+                  <span className="font-semibold">择日模式：</span>
+                  {recommendationMode === "strict" ? "严格模式" : "宽松模式"}
+                </p>
+                <p>
+                  <span className="font-semibold">温度偏好：</span>
+                  {ignoreTemperature ? "不介意/其他" : `${normalizedMinTemp}°C ~ ${normalizedMaxTemp}°C`}
+                </p>
+                <p>
+                  <span className="font-semibold">推荐日期数：</span>
+                  {recommendedDateSet.size}
+                </p>
+                <p>
+                  <span className="font-semibold">节假日禁选：</span>
+                  {blockedWeddingDateSet.size}
+                </p>
+              </div>
               <div className="mt-4">
                 <YearCalendar year={selectedYear} months={months} recommendationMode={recommendationMode} />
               </div>
@@ -524,14 +606,18 @@ export default function Home() {
         </div>
       </div>
       <ChatAssistant
+        hidden={isDownloadingCalendar}
         city={city}
         year={selectedYear}
         recommendationMode={recommendationMode}
+        temperatureDescription={ignoreTemperature ? "不介意/其他" : `${normalizedMinTemp}°C ~ ${normalizedMaxTemp}°C`}
         rankedAuspiciousDates={rankedAuspiciousDates}
         dateScoreDetailByISO={dateScoreDetailByISO}
         dateNoticeByISO={dateNoticeByISO}
         relaxedZodiacTopDates={relaxedZodiacAnalysis.rankedAuspiciousDates}
         relaxedZodiacCount={relaxedZodiacAnalysis.rankedAuspiciousDates.length}
+        strictModeCount={strictModeAnalysis.rankedAuspiciousDates.length}
+        lenientModeCount={lenientModeAnalysis.rankedAuspiciousDates.length}
       />
     </main>
   );

@@ -10,6 +10,7 @@ type YearCalendarProps = {
 
 export function YearCalendar({ year, months, recommendationMode }: YearCalendarProps) {
   const [selectedDay, setSelectedDay] = useState<MonthGrid["days"][number] | null>(null);
+  const weekdayHeader = ["日", "一", "二", "三", "四", "五", "六"];
 
   return (
     <section>
@@ -34,14 +35,26 @@ export function YearCalendar({ year, months, recommendationMode }: YearCalendarP
         </div>
       </div>
 
-      <div className="mt-4 space-y-2 overflow-x-auto rounded-xl border border-slate-200 bg-white/70 p-3 pr-5">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {months.map((month) => (
-          <article key={month.monthName} className="flex min-w-max items-stretch gap-2 rounded-lg bg-white/80 p-2">
-            <div className="flex w-16 flex-shrink-0 items-center justify-center rounded-md bg-red-700 text-sm font-bold text-white">
-              {month.monthName.replace("月", "")}月
+          <article key={month.monthName} className="rounded-xl border border-slate-200 bg-white/90 p-2">
+            <div className="mb-2 flex items-center justify-between rounded-md bg-red-700 px-2 py-1">
+              <span className="text-sm font-bold text-white">{month.monthName.replace("月", "")}月</span>
+              <span className="text-[10px] text-red-100">全年总览</span>
             </div>
 
-            <div className="flex gap-1">
+            <div className="grid grid-cols-7 gap-1 text-center text-[10px] text-slate-500">
+              {weekdayHeader.map((weekday) => (
+                <span key={`${month.monthName}-${weekday}`} className="rounded bg-slate-50 py-0.5">
+                  {weekday}
+                </span>
+              ))}
+            </div>
+
+            <div className="mt-1 grid grid-cols-7 gap-1">
+              {Array.from({ length: month.leadingBlankDays }).map((_, index) => (
+                <div key={`${month.monthName}-blank-${index}`} className="h-[52px] rounded bg-transparent" />
+              ))}
               {month.days.map((day) => {
                 const isRestDay = day.isHoliday || (day.isWeekend && !day.isAdjustedWorkday);
                 const isDimmed = day.hasZodiacConflict || day.isOutsidePreferredTempRange;
@@ -52,7 +65,7 @@ export function YearCalendar({ year, months, recommendationMode }: YearCalendarP
                     type="button"
                     key={day.dateISO}
                     onClick={() => setSelectedDay(day)}
-                    className={`relative flex h-14 w-10 flex-col items-center justify-between rounded-sm border px-0.5 py-0.5 text-[10px] ${
+                    className={`relative flex h-[52px] min-w-0 flex-col items-center justify-between rounded-sm border px-0.5 py-0.5 text-[10px] ${
                       isRestDay
                         ? "border-red-300 bg-red-50 text-red-700"
                         : "border-slate-200 bg-slate-100 text-slate-700"
