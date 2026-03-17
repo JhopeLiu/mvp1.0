@@ -39,6 +39,7 @@ type AlmanacAuspiciousInput = {
   year: number;
   groomZodiac: ZodiacPreference;
   brideZodiac: ZodiacPreference;
+  holidayByDateISO: Record<string, string>;
   blockedWeddingDateSet: Set<string>;
   adjustedWorkdaySet: Set<string>;
   preferredTemperatureDateSet: Set<string>;
@@ -60,6 +61,7 @@ type AlmanacAuspiciousOutput = {
   rankedAuspiciousDates: RankedAuspiciousDate[];
   dateScoreByISO: Record<string, number>;
   dateScoreDetailByISO: Record<string, string>;
+  lunarDayTextByISO: Record<string, string>;
   leapMonth: number;
 };
 
@@ -144,6 +146,13 @@ function addDays(date: Date, days: number): Date {
   const next = new Date(date);
   next.setDate(next.getDate() + days);
   return next;
+}
+
+function getDateISOByOffset(dateISO: string, offset: number): string {
+  const [year, month, day] = dateISO.split("-").map((value) => Number(value));
+  const date = new Date(year, month - 1, day);
+  const target = addDays(date, offset);
+  return toISODateString(target.getFullYear(), target.getMonth() + 1, target.getDate());
 }
 
 function getJieQiDateByName(year: number, name: string): Date | null {
@@ -310,6 +319,7 @@ export function getAlmanacAuspiciousAnalysis({
   year,
   groomZodiac,
   brideZodiac,
+  holidayByDateISO,
   blockedWeddingDateSet,
   adjustedWorkdaySet,
   preferredTemperatureDateSet,
@@ -321,6 +331,7 @@ export function getAlmanacAuspiciousAnalysis({
   const rankedAuspiciousDates: RankedAuspiciousDate[] = [];
   const dateScoreByISO: Record<string, number> = {};
   const dateScoreDetailByISO: Record<string, string> = {};
+  const lunarDayTextByISO: Record<string, string> = {};
   const siLiDateSet = getSiLiDateSet(year);
   const siJueDateSet = getSiJueDateSet(year);
   const leapMonth = LunarYear.fromYear(year).getLeapMonth();
@@ -346,7 +357,13 @@ export function getAlmanacAuspiciousAnalysis({
     const isSiJue = siJueDateSet.has(dateISO);
     const isHolidayOrFestival = blockedWeddingDateSet.has(dateISO);
     const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+    const isSaturday = date.getDay() === 6;
+    const isSunday = date.getDay() === 0;
     const isAdjustedWorkday = adjustedWorkdaySet.has(dateISO);
+    const previousDateISO = getDateISOByOffset(dateISO, -1);
+    const nextDateISO = getDateISOByOffset(dateISO, 1);
+    const isHolidaySequenceLastDay = isHolidayOrFestival && !blockedWeddingDateSet.has(nextDateISO);
+    const isHolidaySequenceFirstDay = isHolidayOrFestival && !blockedWeddingDateSet.has(previousDateISO);
     const isPreferredTemp = preferredTemperatureDateSet.has(dateISO);
     const isBingWuYearFor2026 = year !== 2026 || lunar.getYearInGanZhi() === "丙午";
     const dayChongShengXiao = lunar.getDayChongShengXiao();
@@ -359,6 +376,7 @@ export function getAlmanacAuspiciousAnalysis({
     const impactNotes: string[] = [];
     const remedyNotes: string[] = [];
     let score = 60;
+    lunarDayTextByISO[dateISO] = lunar.getDayInChinese();
 
     if (hasZodiacConflict) {
       zodiacConflictDateSet.add(dateISO);
@@ -401,16 +419,31 @@ export function getAlmanacAuspiciousAnalysis({
     }
 
     if (isHolidayOrFestival) {
+      score += isHolidaySequenceLastDay ? 5 : 12;
+      scoreNotes.push(isHolidaySequenceLastDay ? "休假末日（接近周日） +5" : "休假日（便利性高） +12");
+      impactNotes.push(`属于${holidayByDateISO[dateISO] ?? "节假日/传统节日"}，宾客时间更友好`);
+      if (isHolidaySequenceFirstDay) {
+        scoreNotes.push("假期首日热度高 +2");
+        score += 2;
+      }
+      // 节假日禁选是硬规则，不参与推荐，分值仅用于可解释展示。
       score -= 45;
-      scoreNotes.push("法定/传统节日禁选 -45");
-    }
-
-    if (isAdjustedWorkday) {
-      score -= 8;
-      scoreNotes.push("调休工作日 -8");
-    } else if (isWeekend) {
+      scoreNotes.push("节假日禁选规则 -45");
+    } else if (isAdjustedWorkday) {
       score += 5;
-      scoreNotes.push("周末档期 +5");
+      scoreNotes.push("调休末段（接近周日） +5");
+      impactNotes.push("调休工作日，实际行程安排需更谨慎");
+    } else if (isSaturday) {
+      score += 10;
+      scoreNotes.push("周六档期 +10");
+    } else if (isSunday) {
+      score += 5;
+      scoreNotes.push("周日档期 +5");
+    } else if (isWeekend) {
+      score += 4;
+      scoreNotes.push("周末档期 +4");
+    } else {
+      scoreNotes.push("周中档期 +0");
     }
 
     if (isYangGongJi) {
@@ -570,6 +603,7 @@ export function getAlmanacAuspiciousAnalysis({
     rankedAuspiciousDates,
     dateScoreByISO,
     dateScoreDetailByISO,
+    lunarDayTextByISO,
     leapMonth,
   };
 }

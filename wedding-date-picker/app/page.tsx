@@ -140,6 +140,7 @@ export default function Home() {
     rankedAuspiciousDates,
     dateScoreByISO,
     dateScoreDetailByISO,
+    lunarDayTextByISO,
     leapMonth,
   } = useMemo(
     () =>
@@ -147,6 +148,7 @@ export default function Home() {
         year: selectedYear,
         groomZodiac: groomPreference,
         brideZodiac: bridePreference,
+        holidayByDateISO: holidayMap,
         blockedWeddingDateSet,
         adjustedWorkdaySet,
         preferredTemperatureDateSet,
@@ -158,6 +160,7 @@ export default function Home() {
       blockedWeddingDateSet,
       bridePreference,
       groomPreference,
+      holidayMap,
       ignoreTemperature,
       preferredTemperatureDateSet,
       recommendationMode,
@@ -176,11 +179,13 @@ export default function Home() {
         recommendedDateSet,
         dateScoreByISO,
         dateScoreDetailByISO,
+        lunarDayTextByISO,
       }),
     [
       dateScoreByISO,
       dateScoreDetailByISO,
       holidayMap,
+      lunarDayTextByISO,
       outOfPreferredTemperatureDateSet,
       recommendedDateSet,
       selectedYear,

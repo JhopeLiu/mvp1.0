@@ -1,6 +1,8 @@
 export type CalendarDay = {
   dayNumber: number;
   dateISO: string;
+  weekdayLabel: string;
+  lunarDayText: string;
   isWeekend: boolean;
   isAdjustedWorkday: boolean;
   isHoliday: boolean;
@@ -28,6 +30,7 @@ type BuildMonthGridsOptions = {
   recommendedDateSet?: Set<string>;
   dateScoreByISO?: Record<string, number>;
   dateScoreDetailByISO?: Record<string, string>;
+  lunarDayTextByISO?: Record<string, string>;
 };
 
 export function toISODateString(year: number, month: number, day: number): string {
@@ -56,6 +59,8 @@ export function buildMonthGrids(year: number, options: BuildMonthGridsOptions = 
   const recommendedDateSet = options.recommendedDateSet ?? new Set<string>();
   const dateScoreByISO = options.dateScoreByISO ?? {};
   const dateScoreDetailByISO = options.dateScoreDetailByISO ?? {};
+  const lunarDayTextByISO = options.lunarDayTextByISO ?? {};
+  const weekdayLabels = ["日", "一", "二", "三", "四", "五", "六"];
 
   return Array.from({ length: 12 }, (_, monthIndex) => {
     const monthDates = allDates.filter((date) => date.getMonth() === monthIndex);
@@ -72,6 +77,8 @@ export function buildMonthGrids(year: number, options: BuildMonthGridsOptions = 
         return {
           dayNumber: date.getDate(),
           dateISO,
+          weekdayLabel: weekdayLabels[dayOfWeek],
+          lunarDayText: lunarDayTextByISO[dateISO] ?? "",
           isWeekend: dayOfWeek === 0 || dayOfWeek === 6,
           isAdjustedWorkday: adjustedWorkdaySet.has(dateISO),
           isHoliday: Boolean(holidayName),
